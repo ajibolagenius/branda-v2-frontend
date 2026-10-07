@@ -25,6 +25,15 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  async redirects() {
+    return [
+      {
+        source: "/",
+        destination: "/ng",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
