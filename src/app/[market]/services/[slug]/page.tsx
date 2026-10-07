@@ -13,6 +13,8 @@ interface ServicePageProps {
   params: Promise<{ market: string; slug: string }>;
 }
 
+export const instant = false;
+
 export async function generateStaticParams() {
   const paths: { market: string; slug: string }[] = [];
   for (const market of SUPPORTED_MARKETS) {

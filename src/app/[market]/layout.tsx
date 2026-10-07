@@ -6,6 +6,8 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { CartDrawer } from '@/components/CartDrawer';
 
+export const instant = false;
+
 interface MarketLayoutProps {
   children: React.ReactNode;
   params: Promise<{ market: string }>;
@@ -15,37 +17,14 @@ export async function generateStaticParams() {
   return SUPPORTED_MARKETS.map((market) => ({ market }));
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ market: string }> }): Promise<Metadata> {
-  const { market } = await params;
-  if (!isValidMarket(market)) {
-    return {};
-  }
-  const config = getMarketConfig(market);
-
-  return {
-    title: {
-      default: `${config.hero.headline} | Branda V2 ${config.name}`,
-      template: `%s | Branda V2 ${config.name}`,
-    },
-    description: `${config.hero.tagline} ${config.hero.subtext}`,
-    alternates: {
-      canonical: `/${config.code}`,
-      languages: {
-        'en-NG': '/ng',
-        'en-US': '/us',
-        'en-GB': '/uk',
-        'en-CA': '/ca',
-      },
-    },
-    openGraph: {
-      title: `Branda V2 Branding Ecosystem — ${config.name}`,
-      description: config.hero.tagline,
-      locale: market === 'ng' ? 'en_NG' : market === 'us' ? 'en_US' : market === 'uk' ? 'en_GB' : 'en_CA',
-      siteName: 'Branda V2',
-      type: 'website',
-    },
-  };
-}
+export const metadata: Metadata = {
+  title: {
+    default: 'Branda — Modern Branding Ecosystem',
+    template: '%s | Branda',
+  },
+  description:
+    'Branda connects physical craftsmanship, workspace architecture, and digital brand commerce across Nigeria, USA, UK, and Canada.',
+};
 
 export default async function MarketLayout({ children, params }: MarketLayoutProps) {
   const { market } = await params;
@@ -60,7 +39,7 @@ export default async function MarketLayout({ children, params }: MarketLayoutPro
   return (
     <div className="flex min-h-screen flex-col bg-[#f7f4ee] text-[#141513] antialiased selection:bg-[#2a362a] selection:text-white">
       <Header market={marketCode} />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 pt-32 sm:pt-36 pb-20 sm:pb-24">{children}</main>
       <CartDrawer market={marketCode} />
       <Footer market={marketCode} />
     </div>

@@ -10,6 +10,8 @@ import {
 import { isValidMarket, getMarketConfig } from '@/lib/markets';
 import { MarketCode } from '@/lib/types';
 
+export const instant = false;
+
 interface ConfirmationPageProps {
   params: Promise<{ market: string }>;
   searchParams: Promise<{ orderId?: string }>;

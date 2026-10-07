@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import { ChevronLeft, ChevronRight, PackageSearch } from 'lucide-react';
 import { isValidMarket, getMarketConfig } from '@/lib/markets';
 import { MarketCode } from '@/lib/types';
@@ -8,6 +9,8 @@ import { SERVICES, filterServices } from '@/lib/services-data';
 import { EcosystemHero } from '@/components/EcosystemHero';
 import { CatalogFilters } from '@/components/CatalogFilters';
 import { ServiceCard } from '@/components/ServiceCard';
+
+export const instant = false;
 
 interface MarketPageProps {
   params: Promise<{ market: string }>;
@@ -20,6 +23,33 @@ interface MarketPageProps {
     sortBy?: string;
     page?: string;
   }>;
+}
+
+export async function generateMetadata({ params }: MarketPageProps): Promise<Metadata> {
+  const { market } = await params;
+  if (!isValidMarket(market)) return {};
+  const config = getMarketConfig(market);
+
+  return {
+    title: `${config.hero.headline} | Branda ${config.name}`,
+    description: `${config.hero.tagline} ${config.hero.subtext}`,
+    alternates: {
+      canonical: `/${config.code}`,
+      languages: {
+        'en-NG': '/ng',
+        'en-US': '/us',
+        'en-GB': '/uk',
+        'en-CA': '/ca',
+      },
+    },
+    openGraph: {
+      title: `Branda Branding Ecosystem — ${config.name}`,
+      description: config.hero.tagline,
+      locale: market === 'ng' ? 'en_NG' : market === 'us' ? 'en_US' : market === 'uk' ? 'en_GB' : 'en_CA',
+      siteName: 'Branda',
+      type: 'website',
+    },
+  };
 }
 
 const ITEMS_PER_PAGE = 6;
