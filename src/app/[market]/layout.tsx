@@ -58,7 +58,7 @@ export default async function MarketLayout({ children, params }: MarketLayoutPro
   const marketCode = market as MarketCode;
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-zinc-900 antialiased selection:bg-zinc-950 selection:text-white dark:bg-zinc-950 dark:text-zinc-50 dark:selection:bg-white dark:selection:text-zinc-950">
+    <div className="flex min-h-screen flex-col bg-[#f7f4ee] text-[#141513] antialiased selection:bg-[#2a362a] selection:text-white">
       <Header market={marketCode} />
       <main className="flex-1">{children}</main>
       <CartDrawer market={marketCode} />

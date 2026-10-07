@@ -16,13 +16,11 @@ export function CartDrawer({ market }: CartDrawerProps) {
   const { items, isOpen, closeCart, updateQuantity, removeItem, getSubtotal, getTax, getTotal } = useCartStore();
   const config = getMarketConfig(market);
 
-  // Filter items that match the current market
   const marketItems = items.filter((item) => item.market === market);
   const subtotal = getSubtotal(market);
   const tax = getTax(market);
   const total = getTotal(market);
 
-  // Lock body scroll when drawer is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -34,7 +32,6 @@ export function CartDrawer({ market }: CartDrawerProps) {
     };
   }, [isOpen]);
 
-  // Handle ESC key
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape' && isOpen) {
@@ -57,20 +54,20 @@ export function CartDrawer({ market }: CartDrawerProps) {
       />
 
       <div className="fixed inset-y-0 right-0 flex max-w-full pl-10">
-        <div className="w-screen max-w-md border-l border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 flex flex-col">
+        <div className="w-screen max-w-md border-l border-[#e6e1d6] bg-[#f8f6f0] shadow-2xl flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-5 dark:border-zinc-900">
+          <div className="flex items-center justify-between border-b border-[#e6e1d6] px-6 py-5 bg-white">
             <div className="flex items-center gap-2.5">
-              <ShoppingBag className="h-5 w-5 text-zinc-900 dark:text-zinc-100" />
-              <h2 id="cart-title" className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-                Order Review ({marketItems.reduce((acc, i) => acc + i.quantity, 0)})
+              <ShoppingBag className="h-5 w-5 text-[#222b22]" />
+              <h2 id="cart-title" className="text-base font-black tracking-tight text-zinc-950">
+                Your Orders ({marketItems.reduce((acc, i) => acc + i.quantity, 0)})
               </h2>
             </div>
             <button
               type="button"
               onClick={closeCart}
-              aria-label="Close cart"
-              className="rounded-full p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-900 dark:hover:text-zinc-300"
+              aria-label="Close orders drawer"
+              className="rounded-full p-2 text-zinc-500 hover:bg-[#eee9df] hover:text-black transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
@@ -80,26 +77,26 @@ export function CartDrawer({ market }: CartDrawerProps) {
           <div className="flex-1 overflow-y-auto px-6 py-6">
             {marketItems.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-100 dark:bg-zinc-900 text-zinc-400">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#eee9df] text-zinc-500">
                   <ShoppingBag className="h-8 w-8" />
                 </div>
-                <h3 className="mt-4 text-base font-semibold text-zinc-900 dark:text-zinc-100">Your cart is empty</h3>
+                <h3 className="mt-4 text-base font-bold text-zinc-950">Your cart is empty</h3>
                 <p className="mt-1 text-xs text-zinc-500 max-w-xs">
-                  Discover services across Digital, Gifts, Create, Studio, and Prints tailored for {config.name}.
+                  Discover deliverables across Create, Prints, Gifts, Studio, and Digital for {config.name}.
                 </p>
                 <button
                   type="button"
                   onClick={closeCart}
-                  className="mt-6 rounded-full bg-zinc-900 px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+                  className="mt-6 rounded-full bg-[#222b22] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-xs hover:bg-[#161c16] transition-colors"
                 >
                   Explore Catalog
                 </button>
               </div>
             ) : (
-              <ul className="divide-y divide-zinc-100 dark:divide-zinc-900">
+              <ul className="divide-y divide-[#e6e1d6]">
                 {marketItems.map((item) => (
                   <li key={item.cartItemId} className="flex gap-4 py-4">
-                    <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
+                    <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border border-[#e6e1d6] bg-[#eee9df]">
                       <Image
                         src={item.image}
                         alt={item.name}
@@ -115,7 +112,7 @@ export function CartDrawer({ market }: CartDrawerProps) {
                           <Link
                             href={`/${market}/services/${item.slug}`}
                             onClick={closeCart}
-                            className="text-xs font-semibold text-zinc-900 hover:underline dark:text-zinc-100 line-clamp-1"
+                            className="text-xs font-bold uppercase tracking-wide text-zinc-950 hover:underline line-clamp-1"
                           >
                             {item.name}
                           </Link>
@@ -123,13 +120,13 @@ export function CartDrawer({ market }: CartDrawerProps) {
                             type="button"
                             onClick={() => removeItem(item.cartItemId)}
                             aria-label={`Remove ${item.name}`}
-                            className="text-zinc-400 hover:text-red-500 transition-colors"
+                            className="text-zinc-400 hover:text-red-600 transition-colors"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>
 
-                        <span className="inline-block mt-0.5 rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
+                        <span className="inline-block mt-0.5 rounded bg-[#eee9df] px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#222b22]">
                           {item.category}
                         </span>
 
@@ -146,23 +143,23 @@ export function CartDrawer({ market }: CartDrawerProps) {
                       </div>
 
                       <div className="mt-3 flex items-center justify-between">
-                        {/* Quantity Selector */}
-                        <div className="flex items-center rounded-lg border border-zinc-200 dark:border-zinc-800">
+                        {/* Quantity Stepper */}
+                        <div className="flex items-center rounded-2xl border border-[#e6e1d6] bg-white">
                           <button
                             type="button"
                             onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
-                            className="p-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                            className="p-1.5 px-2.5 text-zinc-600 hover:text-black transition-colors"
                             aria-label="Decrease quantity"
                           >
                             <Minus className="h-3 w-3" />
                           </button>
-                          <span className="w-7 text-center font-mono text-xs font-medium text-zinc-900 dark:text-zinc-100">
+                          <span className="w-7 text-center font-mono text-xs font-bold text-zinc-950">
                             {item.quantity}
                           </span>
                           <button
                             type="button"
                             onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}
-                            className="p-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                            className="p-1.5 px-2.5 text-zinc-600 hover:text-black transition-colors"
                             aria-label="Increase quantity"
                           >
                             <Plus className="h-3 w-3" />
@@ -170,11 +167,11 @@ export function CartDrawer({ market }: CartDrawerProps) {
                         </div>
 
                         <div className="text-right">
-                          <div className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                          <div className="font-mono text-xs font-bold text-zinc-950">
                             {formatCurrency(item.unitPrice * item.quantity, market)}
                           </div>
                           {item.quantity > 1 && (
-                            <div className="text-[10px] text-zinc-400">
+                            <div className="text-[10px] text-zinc-500">
                               {formatCurrency(item.unitPrice, market)} each
                             </div>
                           )}
@@ -189,29 +186,29 @@ export function CartDrawer({ market }: CartDrawerProps) {
 
           {/* Footer Summary */}
           {marketItems.length > 0 && (
-            <div className="border-t border-zinc-100 bg-zinc-50/60 p-6 dark:border-zinc-900 dark:bg-zinc-900/40">
+            <div className="border-t border-[#e6e1d6] bg-[#eee9df]/50 p-6">
               <div className="space-y-2 text-xs">
-                <div className="flex justify-between text-zinc-600 dark:text-zinc-400">
+                <div className="flex justify-between text-zinc-600">
                   <span>Subtotal</span>
-                  <span className="font-mono text-zinc-900 dark:text-zinc-100">{formatCurrency(subtotal, market)}</span>
+                  <span className="font-mono font-bold text-zinc-950">{formatCurrency(subtotal, market)}</span>
                 </div>
-                <div className="flex justify-between text-zinc-600 dark:text-zinc-400">
+                <div className="flex justify-between text-zinc-600">
                   <span>{config.taxLabel}</span>
-                  <span className="font-mono text-zinc-900 dark:text-zinc-100">{formatCurrency(tax, market)}</span>
+                  <span className="font-mono font-bold text-zinc-950">{formatCurrency(tax, market)}</span>
                 </div>
-                <div className="border-t border-zinc-200 pt-2 flex justify-between font-medium text-sm text-zinc-900 dark:border-zinc-800 dark:text-zinc-100">
+                <div className="border-t border-[#e6e1d6] pt-2 flex justify-between font-bold text-sm text-zinc-950">
                   <span>Estimated Total</span>
-                  <span className="font-mono font-bold text-base">{formatCurrency(total, market)}</span>
+                  <span className="font-mono font-black text-lg">{formatCurrency(total, market)}</span>
                 </div>
               </div>
 
               {subtotal >= config.freeShippingThreshold ? (
-                <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-1.5 text-[11px] font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                <div className="mt-3 rounded-xl bg-[#222b22]/10 px-3 py-1.5 text-[11px] font-bold text-[#222b22]">
                   ✓ Qualified for Free Standard Delivery in {config.name}
                 </div>
               ) : (
                 <div className="mt-3 text-[11px] text-zinc-500">
-                  Add {formatCurrency(config.freeShippingThreshold - subtotal, market)} more for free express shipping.
+                  Add {formatCurrency(config.freeShippingThreshold - subtotal, market)} more for complimentary dispatch.
                 </div>
               )}
 
@@ -219,7 +216,7 @@ export function CartDrawer({ market }: CartDrawerProps) {
                 <Link
                   href={`/${market}/checkout`}
                   onClick={closeCart}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-950 py-3 text-xs font-semibold text-white shadow-md hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200 transition-colors"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#222b22] py-4 text-xs font-bold uppercase tracking-wider text-white shadow-xs hover:bg-[#161c16] transition-colors"
                 >
                   <span>Proceed to Checkout</span>
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -228,7 +225,7 @@ export function CartDrawer({ market }: CartDrawerProps) {
                 <button
                   type="button"
                   onClick={closeCart}
-                  className="w-full py-2 text-center text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
+                  className="w-full py-2 text-center text-xs font-bold text-zinc-600 hover:text-black transition-colors"
                 >
                   Continue Browsing
                 </button>

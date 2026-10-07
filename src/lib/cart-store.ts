@@ -15,6 +15,7 @@ interface CartState {
   removeItem: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, quantity: number) => void;
   clearCart: () => void;
+  clearMarketItems: (market: MarketCode) => void;
   getItemCount: () => number;
   getSubtotal: (market: MarketCode) => number;
   getTax: (market: MarketCode) => number;
@@ -71,6 +72,12 @@ export const useCartStore = create<CartState>()(
       },
 
       clearCart: () => set({ items: [] }),
+
+      clearMarketItems: (market) => {
+        set((state) => ({
+          items: state.items.filter((i) => i.market !== market),
+        }));
+      },
 
       getItemCount: () => {
         return get().items.reduce((acc, item) => acc + item.quantity, 0);

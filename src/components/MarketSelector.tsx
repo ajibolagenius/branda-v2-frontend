@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { ChevronDown, Globe } from 'lucide-react';
 import { MarketCode } from '@/lib/types';
@@ -10,7 +10,7 @@ interface MarketSelectorProps {
   currentMarket: MarketCode;
 }
 
-export function MarketSelector({ currentMarket }: MarketSelectorProps) {
+function MarketSelectorInner({ currentMarket }: MarketSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -124,3 +124,20 @@ export function MarketSelector({ currentMarket }: MarketSelectorProps) {
     </div>
   );
 }
+
+export function MarketSelector({ currentMarket }: MarketSelectorProps) {
+  const activeConfig = getMarketConfig(currentMarket);
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900">
+          <span>{activeConfig.flag}</span>
+          <span className="uppercase">{activeConfig.code}</span>
+        </div>
+      }
+    >
+      <MarketSelectorInner currentMarket={currentMarket} />
+    </Suspense>
+  );
+}
+
