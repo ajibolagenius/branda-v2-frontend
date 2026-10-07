@@ -55,6 +55,7 @@ export function Footer({ market }: FooterProps) {
                   <input
                     type="email"
                     placeholder="Drop Your Work Email Here"
+                    suppressHydrationWarning
                     className="w-full rounded-full border border-[#e6e1d6] bg-[#f8f6f0] py-3.5 pl-5 pr-14 text-xs font-semibold text-zinc-900 outline-none focus:border-[#222b22] shadow-xs"
                   />
                   <button

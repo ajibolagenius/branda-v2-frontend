@@ -101,6 +101,7 @@ export function Header({ market }: HeaderProps) {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 autoFocus
+                suppressHydrationWarning
                 className="w-40 sm:w-60 rounded-full border border-[#e6e1d6] bg-white px-4 py-2 text-xs font-semibold text-zinc-900 outline-none focus:border-[#222b22] shadow-xs"
               />
               <button
