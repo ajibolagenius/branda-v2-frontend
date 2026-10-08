@@ -1,171 +1,130 @@
-import { notFound, redirect } from 'next/navigation';
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Metadata } from 'next';
-import { ChevronRight, CheckCircle2 } from 'lucide-react';
-import { isValidMarket, getMarketConfig, SUPPORTED_MARKETS, formatCurrency } from '@/lib/markets';
-import { MarketCode } from '@/lib/types';
-import { SERVICES, getServiceBySlug, getRelatedServices } from '@/lib/services-data';
+import { notFound } from 'next/navigation';
+import { SITE_URL, alternates, formatCurrency, getMarket } from '@/lib/markets';
+import { CATEGORIES, SERVICES, getService, getServices, unitPrice } from '@/lib/services-data';
 import { ServiceGallery } from '@/components/ServiceGallery';
 import { ServiceConfigurator } from '@/components/ServiceConfigurator';
-import { BundleRecommendations } from '@/components/BundleRecommendations';
-
-interface ServicePageProps {
-  params: Promise<{ market: string; slug: string }>;
-}
+import { ServiceCard } from '@/components/ServiceCard';
 
 export const instant = false;
 
-export async function generateStaticParams() {
-  const paths: { market: string; slug: string }[] = [];
-  for (const market of SUPPORTED_MARKETS) {
-    for (const service of SERVICES) {
-      paths.push({ market, slug: service.slug });
-    }
-  }
-  return paths;
+type Props = PageProps<'/[market]/services/[slug]'>;
+
+export function generateStaticParams() {
+  return SERVICES.map((s) => ({ slug: s.slug }));
 }
 
-export async function generateMetadata({ params }: ServicePageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { market, slug } = await params;
-  if (!isValidMarket(market)) return {};
-
-  const service = getServiceBySlug(slug);
-  if (!service) return {};
-
-  const config = getMarketConfig(market);
-  const localizedPrice = formatCurrency(service.basePrices[market as MarketCode] || 0, market as MarketCode);
-
+  const m = getMarket(market);
+  const s = getService(slug);
+  if (!s) return {};
+  const description = `${s.summary} From ${formatCurrency(unitPrice(s, m.code), m.code)}, delivered anywhere in ${m.name}.`;
   return {
-    title: `${service.name} — ${config.name}`,
-    description: `${service.shortDescription} Starting from ${localizedPrice}. Delivered across ${config.name}.`,
-    alternates: {
-      canonical: `/${market}/services/${slug}`,
-      languages: {
-        'en-NG': `/ng/services/${slug}`,
-        'en-US': `/us/services/${slug}`,
-        'en-GB': `/uk/services/${slug}`,
-        'en-CA': `/ca/services/${slug}`,
-      },
-    },
+    title: `${s.name} in ${m.name}`,
+    description,
+    alternates: { canonical: `/${m.code}/services/${slug}`, languages: alternates(`/services/${slug}`) },
     openGraph: {
-      title: `${service.name} | Branda V2 ${config.name}`,
-      description: service.shortDescription,
-      url: `/${market}/services/${slug}`,
-      siteName: 'Branda V2',
-      images: [
-        {
-          url: service.images[0],
-          width: 1200,
-          height: 800,
-          alt: service.name,
-        },
-      ],
-      type: 'website',
+      title: `${s.name} · Branda ${m.name}`,
+      description,
+      url: `/${m.code}/services/${slug}`,
+      images: [{ url: s.images[0], alt: s.name }],
+      locale: m.locale.replace('-', '_'),
     },
   };
 }
 
-export default async function ServiceDetailPage({ params }: ServicePageProps) {
-  const { market, slug } = await params;
+export default async function ServicePage({ params }: Props) {
+  const { market: code, slug } = await params;
+  const { code: market, name: marketName, currency } = getMarket(code);
+  const service = getService(slug);
+  if (!service) notFound();
 
-  if (!isValidMarket(market)) {
-    redirect('/ng');
-  }
+  const category = CATEGORIES[service.category];
+  const stats = [
+    [`${service.turnaroundDays} days`, 'Turnaround'],
+    [String(service.includes.length), 'Included'],
+    [category.label, 'Category'],
+    ['Nationwide', 'Delivery'],
+  ];
 
-  const marketCode = market as MarketCode;
-  const config = getMarketConfig(marketCode);
-
-  const service = getServiceBySlug(slug);
-  if (!service) {
-    notFound();
-  }
-
-  const relatedServices = getRelatedServices(service);
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: service.name,
+    description: service.description,
+    image: service.images,
+    brand: { '@type': 'Brand', name: 'Branda' },
+    offers: {
+      '@type': 'Offer',
+      price: unitPrice(service, market),
+      priceCurrency: currency,
+      availability: 'https://schema.org/InStock',
+      url: `${SITE_URL}/${market}/services/${slug}`,
+    },
+  };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-16">
-      {/* Breadcrumb Navigation */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-zinc-500 font-medium">
-        <Link href={`/${marketCode}`} className="hover:text-black transition-colors">
-          Catalog
-        </Link>
-        <ChevronRight className="h-3 w-3 text-zinc-400" />
-        <Link href={`/${marketCode}?category=${service.category}`} className="capitalize hover:text-black transition-colors">
-          {service.category}
-        </Link>
-        <ChevronRight className="h-3 w-3 text-zinc-400" />
-        <span className="font-bold text-zinc-950 truncate max-w-xs">{service.name}</span>
+    <div className="wrap py-10 sm:py-14">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
+
+      <nav aria-label="Breadcrumb" className="text-sm text-muted">
+        <Link href={`/${market}`} className="hover:text-ink">Home</Link>
+        <span className="mx-2">/</span>
+        <Link href={`/${market}/services?category=${service.category}`} className="hover:text-ink">{category.label}</Link>
+        <span className="mx-2">/</span>
+        <span className="text-ink">{service.name}</span>
       </nav>
 
-      {/* Main Two-Column Service View (Directly from Mockup 3) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
-        {/* Left Column: Image Gallery & Deliverables Narrative */}
-        <div className="lg:col-span-7 space-y-8">
-          <ServiceGallery images={service.images} name={service.name} />
+      <div className="mt-8 grid gap-10 lg:grid-cols-2 lg:gap-16">
+        <ServiceGallery images={service.images} name={service.name} />
 
-          {/* Deliverables Checklist Box */}
-          <div className="rounded-3xl border border-[#e6e1d6] bg-white p-6 sm:p-8 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-[#e6e1d6] pb-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-950">
-                Included Deliverable Scope
-              </h3>
-              <span className="rounded-md bg-[#eee9df] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#222b22]">
-                Guaranteed Handover
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              {service.inclusions.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-start gap-2.5 rounded-xl border border-[#e6e1d6] bg-[#f8f6f0] p-3 text-xs"
-                >
-                  <CheckCircle2 className="h-4 w-4 text-[#222b22] flex-shrink-0 mt-0.5" />
-                  <span className="font-semibold text-zinc-900">{item}</span>
-                </div>
-              ))}
-            </div>
+        <div>
+          <div className="flex gap-1">
+            <span className="tag bg-sand">{category.label}</span>
+            {service.discount && <span className="tag bg-lime">{service.discount}% off</span>}
           </div>
+          <h1 className="display mt-4 text-[clamp(2.75rem,5.5vw,5rem)]">{service.name}</h1>
+          <p className="mt-5 max-w-lg text-lg text-muted">{service.description}</p>
 
-          {/* Production Narrative */}
-          <div className="rounded-3xl border border-[#e6e1d6] bg-white p-6 sm:p-8 shadow-xs space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-950 border-b border-[#e6e1d6] pb-3">
-              Production Specifications & SLAs
-            </h3>
-            <p className="text-xs text-zinc-600 leading-relaxed font-normal">
-              {service.fullDescription}
-            </p>
+          <dl className="mt-8 grid grid-cols-4 border-y border-line">
+            {stats.map(([value, label]) => (
+              <div key={label} className="flex flex-col-reverse border-r border-line py-4 pr-2 pl-3 first:pl-0 last:border-r-0">
+                <dt className="text-sm text-muted">{label}</dt>
+                <dd className="text-lg font-semibold sm:text-xl">{value}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <h2 className="eyebrow mt-10 mb-3">What’s included</h2>
+          <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {service.includes.map((item, i) => (
+              <li key={item} className="flex min-h-24 flex-col justify-between bg-sand p-3 text-sm leading-snug">
+                <span className="text-xs text-muted tabular-nums">{String(i + 1).padStart(2, '0')}</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-10">
+            <ServiceConfigurator service={service} market={market} />
           </div>
-        </div>
-
-        {/* Right Column: Title, Quick Specs Row, & Interactive Configurator (Directly from Mockup 3) */}
-        <div className="lg:col-span-5 space-y-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="rounded-md bg-[#222b22] px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-white">
-                {service.category}
-              </span>
-              <span className="text-xs text-zinc-500 font-semibold">· {service.useCase}</span>
-            </div>
-
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[#111311] leading-tight">
-              {service.name}
-            </h1>
-
-            <p className="mt-3 text-xs sm:text-sm text-zinc-600 leading-relaxed">
-              {service.shortDescription}
-            </p>
-          </div>
-
-          {/* Interactive Configurator */}
-          <div className="rounded-3xl border border-[#e6e1d6] bg-white p-6 sm:p-8 shadow-xs">
-            <ServiceConfigurator service={service} market={marketCode} />
-          </div>
+          <p className="mt-4 text-sm text-muted">Prices in {currency}. Tax and delivery to anywhere in {marketName} are shown at checkout.</p>
         </div>
       </div>
 
-      {/* Bottom Cross-Category Bundling ('You May Also Like' from Mockup 3) */}
-      <BundleRecommendations relatedServices={relatedServices} market={marketCode} />
+      <section className="mt-24 border-t border-line pt-16 sm:mt-32 sm:pt-24">
+        <h2 className="display reveal text-center text-[clamp(2.5rem,7vw,6rem)]">You may also like</h2>
+        <p className="reveal mt-4 text-center text-muted">Pairs well with {service.name}, from other Branda studios.</p>
+        <ul className="mt-12 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-6">
+          {getServices(service.related).map((s) => (
+            <li key={s.slug} className="reveal">
+              <ServiceCard service={s} market={market} sizes="(min-width: 768px) 33vw, 50vw" />
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }

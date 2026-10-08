@@ -1,99 +1,45 @@
-'use client';
-
 import Link from 'next/link';
 import Image from 'next/image';
-import { Plus } from 'lucide-react';
-import { Service, MarketCode } from '@/lib/types';
 import { formatCurrency } from '@/lib/markets';
-import { useCartStore } from '@/lib/cart-store';
+import { unitPrice } from '@/lib/services-data';
+import type { MarketCode, Service } from '@/lib/types';
+import { QuickAdd } from './Cart';
 
-interface ServiceCardProps {
-  service: Service;
-  market: MarketCode;
-}
-
-export function ServiceCard({ service, market }: ServiceCardProps) {
-  const { addItem } = useCartStore();
-
-  const basePrice = service.basePrices[market] || 0;
-  const formattedPrice = formatCurrency(basePrice, market);
-
-  const handleQuickAdd = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const defaultOptions: Record<string, string> = {};
-    service.options.forEach((opt) => {
-      const defChoice = opt.choices.find((c) => c.isDefault) || opt.choices[0];
-      if (defChoice) defaultOptions[opt.id] = defChoice.value;
-    });
-
-    addItem({
-      serviceId: service.id,
-      slug: service.slug,
-      name: service.name,
-      category: service.category,
-      image: service.images[0],
-      quantity: 1,
-      selectedOptions: defaultOptions,
-      unitPrice: basePrice,
-      market,
-    });
-  };
+export function ServiceCard({ service, market, sizes = '(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 50vw' }: { service: Service; market: MarketCode; sizes?: string }) {
+  const price = unitPrice(service, market);
+  const listPrice = unitPrice({ ...service, discount: 0 }, market);
 
   return (
-    <article className="group flex flex-col space-y-3">
-      {/* Product Image Frame (Warm Cream Surface matching Reference Mockups 0 & 1) */}
-      <Link
-        href={`/${market}/services/${service.slug}`}
-        className="relative aspect-square w-full overflow-hidden rounded-3xl bg-[#eee9df] border border-[#e6e1d6]"
-      >
+    <article className="group relative">
+      <div className="relative aspect-[4/5] overflow-hidden bg-sand">
         <Image
           src={service.images[0]}
           alt={service.name}
           fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover group-hover:scale-105 transition-transform duration-500"
+          sizes={sizes}
+          className="object-cover transition-transform duration-700 ease-(--ease-out) group-hover:scale-[1.04]"
         />
-
-        {/* Top Badges */}
-        <div className="absolute top-3 left-3 flex items-center gap-1.5">
-          <span className="rounded-md bg-white/95 backdrop-blur-md px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-black shadow-xs">
-            {service.category}
-          </span>
-          {service.popular && (
-            <span className="rounded-md bg-[#222b22] text-white px-2.5 py-1 text-[10px] font-black uppercase tracking-wider shadow-xs">
-              Popular
-            </span>
-          )}
+        <div className="absolute top-3 left-3 flex gap-1">
+          {service.popular && <span className="tag">Popular</span>}
+          {service.discount && <span className="tag bg-lime">{service.discount}% off</span>}
         </div>
-      </Link>
-
-      {/* Product Details Row */}
-      <div className="flex items-center justify-between gap-3 px-1">
-        <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-xs sm:text-sm uppercase tracking-wide text-zinc-950 group-hover:underline truncate">
-            <Link href={`/${market}/services/${service.slug}`}>
+      </div>
+      <div className="mt-3 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold tracking-wide uppercase">
+            {/* Stretched link: the whole card is clickable, the + button sits above it. */}
+            <Link href={`/${market}/services/${service.slug}`} className="after:absolute after:inset-0">
               {service.name}
             </Link>
           </h3>
-          <p className="text-[11px] text-zinc-500 mt-0.5">
-            {service.turnaroundDays}d turnaround · {service.urgency}
+          <p className="mt-1 text-sm tabular-nums">
+            <span className="text-muted">From </span>
+            <span className="font-semibold">{formatCurrency(price, market)}</span>
+            {service.discount && <s className="ml-2 text-xs text-muted">{formatCurrency(listPrice, market)}</s>}
           </p>
         </div>
-
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="font-mono font-bold text-xs sm:text-sm text-zinc-950">
-            {formattedPrice}
-          </span>
-          <button
-            type="button"
-            onClick={handleQuickAdd}
-            aria-label={`Quick add ${service.name}`}
-            className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#e6e1d6] bg-white text-zinc-900 hover:bg-[#222b22] hover:text-white transition-colors"
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </button>
+        <div className="relative z-10">
+          <QuickAdd service={service} market={market} />
         </div>
       </div>
     </article>

@@ -3,50 +3,35 @@
 import { useState } from 'react';
 import Image from 'next/image';
 
-interface ServiceGalleryProps {
-  images: string[];
-  name: string;
-}
-
-export function ServiceGallery({ images, name }: ServiceGalleryProps) {
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
+export function ServiceGallery({ images, name }: { images: string[]; name: string }) {
+  const [active, setActive] = useState(0);
 
   return (
-    <div className="space-y-4">
-      {/* Main Hero Shot */}
-      <div className="relative aspect-square sm:aspect-[4/3] w-full overflow-hidden rounded-3xl border border-zinc-200/90 bg-white shadow-sm">
+    <div className="lg:sticky lg:top-28">
+      <div className="relative aspect-[4/5] overflow-hidden bg-sand">
+        {/* Keyed so each new photo fades in rather than snapping. */}
         <Image
-          src={images[activeImageIndex]}
-          alt={`${name} preview ${activeImageIndex + 1}`}
+          key={images[active]}
+          src={images[active]}
+          alt={`${name}, photo ${active + 1} of ${images.length}`}
           fill
-          priority
-          sizes="(max-width: 1024px) 100vw, 50vw"
-          className="object-cover transition-all duration-300"
+          preload={active === 0}
+          sizes="(min-width: 1024px) 50vw, 100vw"
+          className="animate-[fade_300ms_ease] object-cover"
         />
       </div>
-
-      {/* Thumbnails Picker */}
       {images.length > 1 && (
-        <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none">
-          {images.map((img, idx) => (
+        <div className="mt-3 flex gap-3">
+          {images.map((src, i) => (
             <button
-              key={idx}
+              key={src}
               type="button"
-              onClick={() => setActiveImageIndex(idx)}
-              aria-label={`View image ${idx + 1}`}
-              className={`relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border transition-all ${
-                idx === activeImageIndex
-                  ? 'border-zinc-950 ring-2 ring-zinc-950/10 scale-95'
-                  : 'border-zinc-200/90 opacity-70 hover:opacity-100 hover:border-zinc-400'
-              }`}
+              onClick={() => setActive(i)}
+              aria-label={`Show photo ${i + 1}`}
+              aria-pressed={i === active}
+              className={`relative size-20 overflow-hidden bg-sand outline-offset-2 transition-opacity ${i === active ? 'outline-2 outline-ink' : 'opacity-60 hover:opacity-100'}`}
             >
-              <Image
-                src={img}
-                alt={`${name} thumbnail ${idx + 1}`}
-                fill
-                sizes="80px"
-                className="object-cover"
-              />
+              <Image src={src} alt="" fill sizes="80px" className="object-cover" />
             </button>
           ))}
         </div>
