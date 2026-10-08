@@ -10,11 +10,6 @@ const nextConfig: NextConfig = {
         hostname: "images.unsplash.com",
         pathname: "/**",
       },
-      {
-        protocol: "https",
-        hostname: "branda.com.ng",
-        pathname: "/**",
-      },
     ],
   },
   turbopack: {

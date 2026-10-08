@@ -46,7 +46,7 @@ This repository fulfills the **Frontend Developer Screening Assessment** for can
 - **Cross-Category Bundles:** "You May Also Like" recommendation engine promoting ecosystem cross-selling.
 
 ### 4. Enterprise Cart & Checkout Flow (`/[market]/cart` & `/[market]/checkout`)
-- **Dual Cart Modes:** Slide-over cart drawer (`CartDrawer.tsx`) for rapid triage + dedicated full shopping cart page (`/cart`).
+- **Dual Cart Modes:** Slide-over cart drawer (native `<dialog>` in `Cart.tsx`) for rapid triage + dedicated full shopping cart page (`/cart`).
 - **Two-Step Enterprise Checkout (Matching Reference Mockups):**
   - **Step 1: Address and Shipping:** Recipient contact, brand organization, physical delivery address, and detailed brand brief instructions.
   - **Step 2: Payment by Card & Settlement:** Corporate card inputs with 256-bit SSL badges + regional gateway options (Paystack in Nigeria, Apple Pay / Wire in US/UK/CA).
@@ -135,36 +135,32 @@ pnpm start
 │       └── task-5-screening-answers.md   # Task 5: 13 Technical Screening answers
 ├── src/
 │   ├── app/
-│   │   ├── globals.css                   # Editorial color tokens & base styles
-│   │   ├── layout.tsx                    # Root HTML layout with Geist font
-│   │   ├── page.tsx                      # Root redirect handler
+│   │   ├── globals.css                   # Design tokens, square buttons, CSS-only motion
+│   │   ├── layout.tsx                    # Root layout, Archivo variable font, metadataBase
+│   │   ├── sitemap.ts / robots.ts        # Per-market sitemap with hreflang alternates
 │   │   └── [market]/
-│   │       ├── layout.tsx                # Market layout (Header, CartDrawer, Footer)
-│   │       ├── page.tsx                  # Market home & filterable catalog
-│   │       ├── loading.tsx               # Streaming skeleton loader
-│   │       ├── error.tsx                 # Error boundary
-│   │       ├── cart/page.tsx             # Shopping cart page
-│   │       ├── checkout/page.tsx         # 2-step enterprise checkout
-│   │       │   └── confirmation/page.tsx # Order confirmation with live pipeline
-│   │       └── services/[slug]/page.tsx  # Dynamic service detail configurator
+│   │       ├── layout.tsx                # Market layout (Header, Footer, cart dialog)
+│   │       ├── page.tsx                  # Market home: per-market hero, featured, spotlight
+│   │       ├── loading.tsx / error.tsx / not-found.tsx
+│   │       ├── services/page.tsx         # SSR catalog, filters + pagination in the URL
+│   │       ├── services/[slug]/page.tsx  # Service detail, per-service metadata + JSON-LD
+│   │       ├── cart/page.tsx             # Cart page
+│   │       └── checkout/                 # Checkout + mock confirmation
 │   ├── components/
-│   │   ├── Header.tsx                    # Global navigation & market trigger
-│   │   ├── Footer.tsx                    # Editorial footer with trust guarantees
-│   │   ├── EcosystemHero.tsx             # Asymmetrical 2-card hero matching mockups
-│   │   ├── CatalogFilters.tsx            # Category pills & multi-axis search
-│   │   ├── ServiceCard.tsx               # Warm cream service card
-│   │   ├── ServiceConfigurator.tsx       # Dynamic options & real-time pricing engine
-│   │   ├── ServiceGallery.tsx            # Aspect ratio locked image preview
-│   │   ├── BundleRecommendations.tsx     # Cross-category bundle recommendations
-│   │   ├── CartDrawer.tsx                # Slide-over cart tray
-│   │   └── MarketSelector.tsx            # Header market & currency switcher modal
+│   │   ├── Header.tsx                    # Nav, market <select>, search + mobile menu popovers
+│   │   ├── Footer.tsx                    # Lime wordmark footer, newsletter
+│   │   ├── Cart.tsx                      # Cart <dialog>, bag button, quick add, stepper, totals
+│   │   ├── CatalogFilters.tsx            # Search + select filters synced to the URL
+│   │   ├── ServiceCard.tsx               # Product tile (server component)
+│   │   ├── ServiceConfigurator.tsx       # Options, live price, add to cart / order now
+│   │   └── ServiceGallery.tsx            # Image gallery with thumbnails
 │   └── lib/
-│       ├── types.ts                      # Core TypeScript definitions & enums
-│       ├── markets.ts                    # Multi-market configs, VAT, and currencies
-│       ├── services-data.ts              # Catalog definitions and filter logic
-│       └── cart-store.ts                 # Zustand persistent cart store
+│       ├── types.ts                      # Shared types
+│       ├── markets.ts                    # Market config, currency formatting, orderSummary()
+│       ├── services-data.ts              # Catalog, unitPrice(), smart search, queryCatalog()
+│       ├── cart-store.ts                 # Zustand cart persisted to localStorage
+│       └── pricing.test.mjs              # `pnpm test`: pricing, totals, search, pagination
 ├── next.config.ts                        # Next.js 16 Turbopack & Cache Components config
-├── tailwind.config.ts                    # Tailwind CSS design system tokens
 └── tsconfig.json                         # Strict TypeScript configuration
 ```
 
