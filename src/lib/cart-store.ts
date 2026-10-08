@@ -1,5 +1,3 @@
-'use client';
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { CartItem, MarketCode } from './types';
@@ -12,7 +10,6 @@ interface CartState {
   closeCart: () => void;
   addItem: (item: Omit<CartItem, 'id'>, open?: boolean) => void;
   setQuantity: (id: string, quantity: number) => void;
-  removeItem: (id: string) => void;
   clearMarket: (market: MarketCode) => void;
 }
 
@@ -41,7 +38,6 @@ export const useCartStore = create<CartState>()(
           items: quantity < 1 ? s.items.filter((i) => i.id !== id) : s.items.map((i) => (i.id === id ? { ...i, quantity } : i)),
         })),
 
-      removeItem: (id) => set((s) => ({ items: s.items.filter((i) => i.id !== id) })),
       clearMarket: (market) => set((s) => ({ items: s.items.filter((i) => i.market !== market) })),
     }),
     {

@@ -53,13 +53,3 @@ export interface CartItem {
   unitPrice: number;
   quantity: number;
 }
-
-export interface CatalogQuery {
-  category?: string;
-  search?: string;
-  industry?: string;
-  urgency?: string;
-  useCase?: string;
-  sort?: string;
-  page?: string;
-}

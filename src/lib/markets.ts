@@ -1,6 +1,6 @@
 import type { CartItem, MarketCode, MarketConfig } from './types';
 
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://branda-v2.vercel.app';
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://branda-v2-theta.vercel.app';
 
 export const MARKETS: Record<MarketCode, MarketConfig> = {
   ng: {

@@ -1,4 +1,8 @@
-import type { CatalogQuery, Category, MarketCode, Service, Urgency } from './types';
+import type { Category, MarketCode, Service, Urgency } from './types';
+
+// Every catalog filter lives in the URL under these keys.
+export const CATALOG_KEYS = ['category', 'search', 'industry', 'urgency', 'useCase', 'sort', 'page'] as const;
+export type CatalogQuery = Partial<Record<(typeof CATALOG_KEYS)[number], string>>;
 
 export const CATEGORIES: Record<Category, { label: string; blurb: string }> = {
   create: { label: 'Create', blurb: 'Logos, packaging and decks' },
@@ -30,7 +34,6 @@ export const URGENCY: Record<Urgency, string> = {
 };
 
 export const SORTS: Record<string, string> = {
-  popular: 'Most popular',
   'price-asc': 'Price, low to high',
   'price-desc': 'Price, high to low',
   fastest: 'Fastest turnaround',
