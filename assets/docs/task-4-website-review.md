@@ -1,84 +1,38 @@
-# Task 4: Website and Product Review — branda.com.ng
+# Task 4: Website and Product Review, branda.com.ng
 
-**Target:** [https://branda.com.ng/](https://branda.com.ng/)  
-**Reviewer:** Ajibola Akelebe  
-**Date:** October 2026  
-**Context:** Production frontend inspection conducted via live DOM, network profiling, and source code tracing to inform the architecture and UI/UX for Branda V2.
+Ajibola Akelebe · Frontend Developer, Branda V2 · October 2026
 
----
+I went through the live site in Chrome on a phone-sized screen (390px) and on desktop: the home page, the shop, product categories, a product page, the Studio, Gifts and web development pages, and both quote forms. I also read the page source and the browser console. Load times are from my own connection in Lagos, checked on 8 October 2026, so treat them as one real-world sample rather than lab numbers.
 
-## 1. Executive Summary
+## Three things working well
 
-Branda has built a compelling value proposition as a comprehensive branding ecosystem ("One Powerhouse. Every branding solution.") serving over 500+ enterprises (including GTCO, Dangote, Truecaller, and Autochek). 
+1. **The positioning is clear.** "All-in-One Branding Partner" and "One Powerhouse. Every branding solution." say what Branda is in a few words. The home page backs it up with one call to action per service: Get An Instant Quote, Design Workspace, Order Corporate Gifts and Develop Website.
+2. **Trust shows up early.** Client logos (Truecaller, GTCO, Swipe, Dangote, Reliance, Wao Wallpaper), "Chosen by 500+ Leading Companies", and press mentions in TechCabal and The Sun answer "can I trust them?" before the visitor has to ask.
+3. **Product pages do the job.** The business card page has a real price, options for size, corners and lamination, a minimum order note, Add to cart, and a link to request a quote instead. It also has a proper page heading and product structured data, which most other pages lack.
 
-However, the current production platform (`branda.com.ng`) runs on a heavily patched WordPress/WooCommerce stack (LiteSpeed Server, Elementor, Revolution Slider, WC Designer Pro, YITH plugins). It exhibits severe frontend performance bottlenecks, runtime script syntax errors, mobile friction, and single-market hardcoding that impede international scalability across Nigeria, the USA, the UK, and Canada.
+## Five areas to improve
 
----
+1. **A script error on every page.** A SiteLock badge (an HTML `<a>` tag) has been pasted inside the Google Ads `gtag` script. Chrome reports `SyntaxError: Unexpected token '<'` on the home page, the shop and product pages. That whole block stops running, so the Google Ads tag (`AW-17788095716`) is never configured, and ad conversions may not be recorded. It's a five-minute fix.
+2. **A loading screen hides the site.** On a first visit, a full-screen black preloader with a green spinner covers the page until everything has loaded. On my connection that was about 13 seconds on the shop and 16 on the home page. A visitor sees a blank white screen, then the spinner, and only then the site. The preloader GIF is also 538 KB and is downloaded at high priority on every page.
+3. **Too much code for each page.** The home page makes about 115 requests and transfers 1.5 to 1.8 MB: around 40 script files and 48 stylesheets. That includes jQuery and jQuery Migrate, Revolution Slider, two carousel libraries (Slick and Owl) and two lightbox libraries (Magnific Popup and Fancybox), so two jobs are each done twice. The HTML itself is sent with `no-store`, so it is never cached, and the server took 2 to 3 seconds to start responding.
+4. **Built for one market only.** Prices are in naira only, there is no currency or country switcher, and there are no `hreflang` tags. The page source declares `og:locale` as `en_US`, then a script changes it to `en_NG` after the page loads. Search engines and link previews that don't run scripts still see US English.
+5. **Search engines can't read the most important text.** None of the main pages I checked (home, shop, Studio, Gifts, web development, the quote page, product categories) has an `<h1>`. The home page uses 21 `<h2>`s instead. The five studio names (Gifts, Studio, Create, Prints, Digital) are drawn as shapes in an SVG image with an empty `alt`, so Google and screen readers can't read them, and visitors can't click them.
 
-## 2. Three Things Working Well (Frontend / UI Perspective)
+## Issues by area
 
-1. **Clear Brand Hierarchy & Ecosystem Framing:**
-   - The grouping of services under distinct umbrella brands—**Studio by Branda**, **Digital by Branda**, **Create by Branda**, **Gifts by Branda**, and **Prints by Branda**—gives prospective corporate clients a clear mental model of full-spectrum agency capabilities rather than a disjointed print vendor.
-2. **Prominent Social Proof & Corporate Credibility:**
-   - The enterprise logo showcase displaying prominent African and international corporations (GTCO, Dangote Group, Truecaller, Reliance Infosystems, Autochek) establishes immediate trust and authority above the fold.
-3. **High-Intent B2B Call-to-Actions (CTAs):**
-   - Actionable CTAs such as *"Get An Instant Quote"*, *"Order Corporate Gifts"*, and *"Design Workspace"* are explicitly mapped to high-intent customer purchase funnels, guiding enterprise decision-makers toward conversion.
-
----
-
-## 3. Five Critical Areas for Improvement
-
-1. **Critical Head JavaScript Syntax Error (Broken Script Execution):**
-   - **Observation:** In the document `<head>`, inside an inline Google Tag Manager script block (`lines 212–221`), a raw HTML `<a>` tag for a SiteLock badge was accidentally pasted:
-     ```html
-     <script>
-       window.dataLayer = window.dataLayer || [];
-       function gtag(){dataLayer.push(arguments);}
-       gtag('js', new Date());
-       gtag('config', 'AW-17788095716');
-       
-       <a href="#" onclick="window.open('https://www.sitelock.com/...');"><img ... /></a>
-     </script>
-     ```
-   - **Impact:** Throws an uncaught `SyntaxError: Unexpected token '<'` immediately during initial document parse, breaking subsequent script execution in that block and polluting the browser console.
-2. **Blocking Full-Screen Preloader Destroying FCP & LCP:**
-   - **Observation:** The site forces a full-viewport blocking overlay (`#sl-preloader`) rendering an unoptimized 500×500 animated GIF (`Branda-Icon-preloader.gif`) via inline CSS `visibility: visible !important;`.
-   - **Impact:** Artificially delays First Contentful Paint (FCP) and Largest Contentful Paint (LCP) by 2–4+ seconds, directly punishing SEO ranking on Google Mobile search.
-3. **Severe Plugin Bloat & Asset Payload:**
-   - **Observation:** The page enqueues dozens of overlapping stylesheets and scripts: jQuery 3.7.1, jQuery Migrate, jQuery BlockUI, Slick Carousel, Owl Carousel, Magnific Popup, Fancybox, Revolution Slider, Spectrum color picker, and Elementor post styles.
-   - **Impact:** Over 3.5MB+ of uncompressed CSS/JS assets, causing severe main-thread blocking, high memory consumption, and sluggish scroll performance on mobile devices.
-4. **Single-Market Hardcoding (No Internationalization Architecture):**
-   - **Observation:** The current site is hardcoded strictly for Nigeria:
-     - Domain hardcoded to `.com.ng`
-     - Currency hardcoded to Nigerian Naira (`₦`)
-     - Open Graph locale forced to `en_NG` via a client-side DOM script listener (`ogLocale.setAttribute('content', 'en_NG')`)
-   - **Impact:** Complete lack of subfolder routing (`/ng`, `/us`, `/uk`, `/ca`), inability to serve international currencies (USD, GBP, CAD), and missing `hreflang` architecture necessary for global organic search.
-5. **Overwhelming Navigation & Submenu Usability on Mobile:**
-   - **Observation:** The navigation menu contains 4-level deep nested dropdowns with over 35 distinct sub-links (e.g., *Shop > Print Shop > Reliable Print Shop in Nigeria > Wedding Souvenirs Printing Nigeria*).
-   - **Impact:** Difficult to tap on touchscreens, high cognitive load, and high bounce rate for mobile users searching for specific branding deliverables.
-
----
-
-## 4. Noticeable Issues Across Dimensions
-
-| Dimension | Observed Issue |
+| Area | What I found |
 |---|---|
-| **Responsiveness** | Slider Revolution presizing script (`setREVStartSize`) calculates window width imperatively via inline script, causing layout shifts and horizontal overflow on mobile viewports. |
-| **Navigation** | Overloaded taxonomy with redundant categories (*"Plain Wears"* vs *"Custom Apparel"* vs *"Print Shop"*). Lack of a persistent search bar or command palette. |
-| **User Experience** | Ordering services requires navigating through traditional WooCommerce product pages without interactive options configurators or transparent turnaround schedules. |
-| **Page Speed** | Poor mobile Core Web Vitals (FCP > 3.2s, LCP > 5.5s) caused by unoptimized imagery, render-blocking scripts, and the full-page preloader. |
-| **Accessibility** | Interactive icons and buttons lack proper `aria-label` attributes; color contrast in secondary Yellowtail script headings fails WCAG 2.1 AA standards. |
-| **UI Consistency** | Inconsistent mix of multiple icon sets (FontAwesome, Phosphor Icons, HaruIcons, Pricons) and divergent typography scales (Outfit, Yellowtail, Roboto Slab, Rubik, Montserrat). |
+| Responsiveness | Holds up. No sideways scrolling at 390px and very little layout shift. The hero headline types itself out letter by letter, so the main message is half-written for the first few seconds ("Unlock the Best Deals in Prints & Mass Pr…") |
+| Navigation | 50 menu links in 7 dropdowns. "Print Shop" alone is one list of 24 items. The phone icon links to `branda.com.ng/+2348026101233`, which is a 404 page, because `tel:` is missing. The Facebook icon has an empty link, so it just reloads the page |
+| User experience | Two separate quote pages with different forms: `/request-a-quote/` has 27 fields (10 required) and `/request-a-quote-now/` has 17 (5 required). Product cards show wide price ranges, like ₦12,500 to ₦554,420, until options are chosen. Web development has no price at all |
+| Page speed | Preloader until full load, 1.5 MB or more per page, HTML never cached, and only 4 of about 30 home page images lazy-loaded. The main content finished loading after about 9 seconds on mobile in my test |
+| Accessibility | No `<h1>` on main pages. Five icon-only links (Facebook, phone, WhatsApp, Instagram and one more) have no label, so a screen reader can't say what they are. Three meaningful images have an empty `alt`: the studio names, a hoodie mockup and a services banner |
+| UI consistency | Six font families (Montserrat, Outfit, Roboto, Roboto Slab, Rubik, Yellowtail) and five icon sets (Font Awesome, Phosphor, Haru, Pricon, Elementor icons) on one page |
+| SEO | Page titles are too long to show in full. The product page title is about 140 characters. Category URLs are long keyword chains, up to five folders deep. A duplicate product with "copy" in its address is live |
+| Mobile | Phones get the worst of it: the heaviest pages, the slowest start, and the longest time behind the loading screen |
 
----
+## Three improvements I would prioritise for V2
 
-## 5. Three Practical Improvements to Prioritize for Branda V2
-
-1. **Subfolder-Based Multi-Market Architecture (`/ng`, `/us`, `/uk`, `/ca`) with Native Currency Switching:**
-   - Implement clean Next.js App Router subfolder routing to retain maximum domain SEO equity.
-   - Dynamically adapt pricing, localized taxes/VAT (e.g., 7.5% NG VAT vs 20% UK VAT), shipping thresholds, and hero value propositions per geographic market, with seamless header country selection.
-2. **Interactive Service Customization & Instant Price Engine:**
-   - Replace rigid WooCommerce dropdowns with a real-time service customizer (volume tiers, premium materials, and turnaround pace) that recalculates unit price, total investment, and delivery estimates in real time without page reloads.
-3. **Radical Performance & Core Web Vitals Optimization:**
-   - Migrate from heavy WordPress plugins to Next.js React Server Components (RSC) and Tailwind CSS.
-   - Eliminate all preloaders; employ Next.js `next/image` with modern WebP/AVIF formats and responsive `sizes`; implement streaming skeletons (`loading.tsx`), achieving a sub-1.2s LCP and 95+ Mobile Lighthouse score.
+1. **Multi-market from day one.** `/ng`, `/us`, `/uk` and `/ca`, each with its own currency, tax, delivery terms and headline, plus `hreflang` so Google shows the right version in each country. This assessment build already does this.
+2. **One ordering flow for everything.** Products already have prices and options. Services should work the same way: a clear starting price, options with a live total, and checkout in the same cart. Merge the two quote pages into one short form for the jobs that really need a conversation.
+3. **Speed and search as a release rule.** No preloader. One font family and one icon set. Real text for headings and key messages, with one `<h1>` per page and short titles. Core Web Vitals checked on a real phone on mobile data before every release. Fixing the `gtag` error and the broken phone link are the first two commits.

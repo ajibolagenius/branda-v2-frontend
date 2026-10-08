@@ -45,3 +45,7 @@ FRONTEND SCREENING TASK.pdf
 .env.local
 assets/ui
 graphify-out
+# task docs ship as PDFs; Markdown sources and the PDF build stay local
+assets/docs/*.md
+assets/docs/build-pdfs.sh
+assets/docs/.build/
