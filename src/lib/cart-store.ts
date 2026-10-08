@@ -1,120 +1,55 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { CartItem, MarketCode } from './types';
-import { getMarketConfig } from './markets';
+import { persist } from 'zustand/middleware';
+import type { CartItem, MarketCode } from './types';
 
 interface CartState {
   items: CartItem[];
   isOpen: boolean;
+  hydrated: boolean; // false until localStorage has been read
   openCart: () => void;
   closeCart: () => void;
-  toggleCart: () => void;
-  addItem: (item: Omit<CartItem, 'cartItemId'>) => void;
-  removeItem: (cartItemId: string) => void;
-  updateQuantity: (cartItemId: string, quantity: number) => void;
-  clearCart: () => void;
-  clearMarketItems: (market: MarketCode) => void;
-  getItemCount: () => number;
-  getSubtotal: (market: MarketCode) => number;
-  getTax: (market: MarketCode) => number;
-  getTotal: (market: MarketCode) => number;
+  addItem: (item: Omit<CartItem, 'id'>, open?: boolean) => void;
+  setQuantity: (id: string, quantity: number) => void;
+  removeItem: (id: string) => void;
+  clearMarket: (market: MarketCode) => void;
 }
 
 export const useCartStore = create<CartState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       items: [],
       isOpen: false,
-
+      hydrated: false,
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
-      toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
 
-      addItem: (item) => {
-        const sortedOptions = Object.keys(item.selectedOptions)
-          .sort()
-          .map((k) => `${k}:${item.selectedOptions[k]}`)
-          .join('|');
-        const cartItemId = `${item.serviceId}-${item.market}-${sortedOptions}`;
-
-        set((state) => {
-          const existingIndex = state.items.findIndex((i) => i.cartItemId === cartItemId);
-          if (existingIndex > -1) {
-            const nextItems = [...state.items];
-            nextItems[existingIndex] = {
-              ...nextItems[existingIndex],
-              quantity: nextItems[existingIndex].quantity + item.quantity,
-            };
-            return { items: nextItems, isOpen: true };
-          }
-          return { items: [...state.items, { ...item, cartItemId }], isOpen: true };
+      addItem: (item, open = true) => {
+        const id = [item.slug, item.market, ...Object.values(item.options)].join('|');
+        set((s) => {
+          const existing = s.items.find((i) => i.id === id);
+          const items = existing
+            ? s.items.map((i) => (i.id === id ? { ...i, quantity: i.quantity + item.quantity } : i))
+            : [...s.items, { ...item, id }];
+          return { items, isOpen: open || s.isOpen };
         });
       },
 
-      removeItem: (cartItemId) => {
-        set((state) => ({
-          items: state.items.filter((i) => i.cartItemId !== cartItemId),
-        }));
-      },
+      setQuantity: (id, quantity) =>
+        set((s) => ({
+          items: quantity < 1 ? s.items.filter((i) => i.id !== id) : s.items.map((i) => (i.id === id ? { ...i, quantity } : i)),
+        })),
 
-      updateQuantity: (cartItemId, quantity) => {
-        if (quantity <= 0) {
-          get().removeItem(cartItemId);
-          return;
-        }
-        set((state) => ({
-          items: state.items.map((i) =>
-            i.cartItemId === cartItemId ? { ...i, quantity } : i
-          ),
-        }));
-      },
-
-      clearCart: () => set({ items: [] }),
-
-      clearMarketItems: (market) => {
-        set((state) => ({
-          items: state.items.filter((i) => i.market !== market),
-        }));
-      },
-
-      getItemCount: () => {
-        return get().items.reduce((acc, item) => acc + item.quantity, 0);
-      },
-
-      getSubtotal: (market) => {
-        return get()
-          .items.filter((item) => item.market === market)
-          .reduce((acc, item) => acc + item.unitPrice * item.quantity, 0);
-      },
-
-      getTax: (market) => {
-        const subtotal = get().getSubtotal(market);
-        const config = getMarketConfig(market);
-        return Math.round(subtotal * config.taxRate * 100) / 100;
-      },
-
-      getTotal: (market) => {
-        const subtotal = get().getSubtotal(market);
-        const tax = get().getTax(market);
-        return subtotal + tax;
-      },
+      removeItem: (id) => set((s) => ({ items: s.items.filter((i) => i.id !== id) })),
+      clearMarket: (market) => set((s) => ({ items: s.items.filter((i) => i.market !== market) })),
     }),
     {
-      name: 'branda_v2_cart',
-      storage: createJSONStorage(() => {
-        if (typeof window !== 'undefined') {
-          return localStorage;
-        }
-        // Fallback for SSR/Server Components (Ponytail: clean mock without dummy storage packages)
-        return {
-          getItem: () => null,
-          setItem: () => {},
-          removeItem: () => {},
-        };
-      }),
-      partialize: (state) => ({ items: state.items }),
-    }
-  )
+      name: 'branda_cart_v3',
+      partialize: (s) => ({ items: s.items }),
+      // Rehydrated after mount (see CartDrawer) so server and first client render match.
+      skipHydration: true,
+      onRehydrateStorage: () => () => useCartStore.setState({ hydrated: true }),
+    },
+  ),
 );

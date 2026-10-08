@@ -1,93 +1,107 @@
-import { MarketCode, MarketConfig } from './types';
+import type { CartItem, MarketCode, MarketConfig } from './types';
+
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://branda-v2.vercel.app';
 
 export const MARKETS: Record<MarketCode, MarketConfig> = {
   ng: {
     code: 'ng',
     name: 'Nigeria',
+    locale: 'en-NG',
     currency: 'NGN',
-    symbol: '₦',
     flag: '🇳🇬',
     taxRate: 0.075,
-    taxLabel: 'VAT (7.5%)',
-    freeShippingThreshold: 150000,
-    hero: {
-      badge: 'Branda V2 · West Africa Production Hub',
-      headline: 'The Complete Branding Ecosystem for Modern African Enterprise',
-      tagline: 'Order bespoke corporate merchandise, architectural studio fit-outs, and digital brand collateral with nationwide logistics.',
-      subtext: 'Fast-tracked turnaround across Lagos, Abuja, Port Harcourt & 33 states with verified quality assurance.',
-    },
+    taxLabel: 'VAT 7.5%',
+    shippingFee: 5000,
+    freeShippingFrom: 150000,
+    headline: 'Every branding job. One order.',
+    subline: 'Logos, print, gifts, office branding and websites. Made and delivered anywhere in Nigeria, with no middleman markup.',
+    featured: ['executive-gift-box', 'custom-apparel', 'branded-mugs', 'business-cards', 'event-backdrop', 'logo-design'],
+    spotlight: 'office-wall-branding',
   },
   us: {
     code: 'us',
     name: 'United States',
+    locale: 'en-US',
     currency: 'USD',
-    symbol: '$',
     flag: '🇺🇸',
     taxRate: 0.08,
-    taxLabel: 'Est. Sales Tax (8%)',
-    freeShippingThreshold: 500,
-    hero: {
-      badge: 'Branda Global · North America Fulfillment',
-      headline: 'Enterprise-Grade Corporate Branding & Premium Custom Swag',
-      tagline: 'Transform your brand presence with precision custom apparel, executive gift packs, and high-impact digital experiences.',
-      subtext: 'Coast-to-coast rapid fulfillment for high-growth tech startups, agencies, and enterprise marketing teams.',
-    },
+    taxLabel: 'Sales tax (est. 8%)',
+    shippingFee: 25,
+    freeShippingFrom: 500,
+    headline: 'Brand everything. Ship it nationwide.',
+    subline: 'Identity, merch, print and web for US teams. One cart, one invoice, delivered to any state.',
+    featured: ['logo-design', 'custom-apparel', 'executive-gift-box', 'website-design', 'branded-tumblers', 'stickers-labels'],
+    spotlight: 'exhibition-booth',
   },
   uk: {
     code: 'uk',
     name: 'United Kingdom',
+    locale: 'en-GB',
     currency: 'GBP',
-    symbol: '£',
     flag: '🇬🇧',
     taxRate: 0.2,
-    taxLabel: 'UK VAT (20%)',
-    freeShippingThreshold: 350,
-    hero: {
-      badge: 'Branda UK · London & Regional Network',
-      headline: 'Curated Branding Services & Bespoke Merchandising Solutions',
-      tagline: 'Deliver unmatched physical and digital brand touchpoints tailored for demanding British commerce.',
-      subtext: 'Precision craftmanship, sustainably sourced materials, and rapid turnaround across London and nationwide.',
-    },
+    taxLabel: 'VAT 20%',
+    shippingFee: 20,
+    freeShippingFrom: 350,
+    headline: 'Your whole brand, sorted.',
+    subline: 'From business cards to office signage. Produced and delivered anywhere in the UK, on one invoice.',
+    featured: ['business-cards', 'office-wall-branding', 'logo-design', 'branded-mugs', 'packaging-design', 'brand-portal'],
+    spotlight: 'executive-gift-box',
   },
   ca: {
     code: 'ca',
     name: 'Canada',
+    locale: 'en-CA',
     currency: 'CAD',
-    symbol: 'CA$',
     flag: '🇨🇦',
     taxRate: 0.13,
-    taxLabel: 'Harmonized Sales Tax (HST 13%)',
-    freeShippingThreshold: 600,
-    hero: {
-      badge: 'Branda Canada · Pan-Canadian Delivery',
-      headline: 'Bilingual Branding Excellence & Premium Workspace Production',
-      tagline: 'Elevate customer and team touchpoints with executive gifts, retail packaging, and modern corporate signage.',
-      subtext: 'Seamless fulfillment across Toronto, Vancouver, Montreal, and nationwide with zero border friction.',
-    },
+    taxLabel: 'HST 13%',
+    shippingFee: 30,
+    freeShippingFrom: 600,
+    headline: 'From logo to lobby.',
+    subline: 'Identity, gifting, print and workspace branding. Delivered coast to coast across Canada.',
+    featured: ['executive-gift-box', 'exhibition-booth', 'custom-apparel', 'branded-backpacks', 'website-design', 'business-cards'],
+    spotlight: 'neon-signage',
   },
 };
 
-export const SUPPORTED_MARKETS: MarketCode[] = ['ng', 'us', 'uk', 'ca'];
+export const SUPPORTED_MARKETS = Object.keys(MARKETS) as MarketCode[];
 
-// Secure validation against untrusted route parameters (Secure-Me)
 export function isValidMarket(market: string): market is MarketCode {
-  return SUPPORTED_MARKETS.includes(market as MarketCode);
+  return market in MARKETS;
 }
 
-export function getMarketConfig(market: string): MarketConfig {
-  if (isValidMarket(market)) {
-    return MARKETS[market];
-  }
-  return MARKETS.ng; // Safe default
+// Route params are untrusted; unknown codes fall back to Nigeria.
+export function getMarket(market: string): MarketConfig {
+  return isValidMarket(market) ? MARKETS[market] : MARKETS.ng;
 }
 
-// Ponytail: Standard library Intl.NumberFormat without external accounting bloat
+// hreflang map for a path shared by every market, e.g. '/services/logo-design'.
+export function alternates(path = '') {
+  return {
+    ...Object.fromEntries(SUPPORTED_MARKETS.map((c) => [MARKETS[c].locale, `/${c}${path}`])),
+    'x-default': `/ng${path}`,
+  };
+}
+
 export function formatCurrency(amount: number, market: MarketCode): string {
-  const config = getMarketConfig(market);
-  return new Intl.NumberFormat(market === 'ng' ? 'en-NG' : market === 'us' ? 'en-US' : market === 'uk' ? 'en-GB' : 'en-CA', {
+  const { locale, currency } = MARKETS[market];
+  const digits = market === 'ng' ? 0 : 2;
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
-    currency: config.currency,
-    maximumFractionDigits: market === 'ng' ? 0 : 2,
-    minimumFractionDigits: market === 'ng' ? 0 : 2,
+    currency,
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
   }).format(amount);
+}
+
+// Single source of truth for every total shown: drawer, cart page and checkout.
+export function orderSummary(allItems: CartItem[], market: MarketCode) {
+  const { taxRate, shippingFee, freeShippingFrom } = MARKETS[market];
+  const items = allItems.filter((i) => i.market === market);
+  const count = items.reduce((n, i) => n + i.quantity, 0);
+  const subtotal = items.reduce((n, i) => n + i.unitPrice * i.quantity, 0);
+  const tax = Math.round(subtotal * taxRate * 100) / 100;
+  const shipping = count === 0 || subtotal >= freeShippingFrom ? 0 : shippingFee;
+  return { items, count, subtotal, tax, shipping, total: subtotal + tax + shipping, toFreeShipping: Math.max(0, freeShippingFrom - subtotal) };
 }

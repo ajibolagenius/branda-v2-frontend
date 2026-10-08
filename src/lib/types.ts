@@ -1,78 +1,65 @@
 export type MarketCode = 'ng' | 'us' | 'uk' | 'ca';
 
-export type Category = 'digital' | 'gifts' | 'create' | 'studio' | 'prints';
+export type Category = 'create' | 'prints' | 'gifts' | 'studio' | 'digital';
+
+export type Urgency = 'priority' | 'express' | 'standard';
 
 export interface MarketConfig {
   code: MarketCode;
   name: string;
+  locale: string; // BCP 47, drives Intl formatting and hreflang
   currency: 'NGN' | 'USD' | 'GBP' | 'CAD';
-  symbol: string;
   flag: string;
   taxRate: number;
   taxLabel: string;
-  freeShippingThreshold: number;
-  hero: {
-    badge: string;
-    headline: string;
-    tagline: string;
-    subtext: string;
-  };
-}
-
-export interface ServiceOptionChoice {
-  label: string;
-  value: string;
-  priceMultiplier: number; // Applied to base price
-  isDefault?: boolean;
+  shippingFee: number;
+  freeShippingFrom: number;
+  headline: string;
+  subline: string;
+  featured: string[]; // service slugs, in display order: hero pair first
+  spotlight: string;
 }
 
 export interface ServiceOption {
-  id: string;
   name: string;
-  type: 'tier' | 'material' | 'size' | 'finish';
-  choices: ServiceOptionChoice[];
+  choices: { label: string; multiplier: number }[]; // first choice is the default
 }
 
 export interface Service {
-  id: string;
   slug: string;
   name: string;
   category: Category;
-  shortDescription: string;
-  fullDescription: string;
-  basePrices: Record<MarketCode, number>;
-  discountPercentage?: number;
+  summary: string;
+  description: string;
+  prices: Record<MarketCode, number>;
+  discount?: number; // percent off
   images: string[];
-  inclusions: string[];
+  includes: string[];
   turnaroundDays: number;
   popular: boolean;
-  featured: boolean;
-  industryTags: string[];
-  urgency: 'Priority (24-48h)' | 'Express (3-5d)' | 'Standard (7-10d)';
-  useCase: 'Brand Launch' | 'Corporate Gifting' | 'Marketing Campaign' | 'Workspace Transformation';
+  industries: string[];
+  useCase: string;
   options: ServiceOption[];
-  relatedSlugs: string[];
+  related: string[];
 }
 
 export interface CartItem {
-  cartItemId: string;
-  serviceId: string;
+  id: string; // slug + market + options, so the same config merges
   slug: string;
   name: string;
-  category: Category;
   image: string;
-  quantity: number;
-  selectedOptions: Record<string, string>; // optionId -> choiceValue
-  unitPrice: number;
   market: MarketCode;
+  options: Record<string, string>; // option name -> choice label
+  unitPrice: number;
+  quantity: number;
 }
 
-export interface ServiceFilters {
-  category?: Category | 'all';
+export interface CatalogQuery {
+  category?: string;
   search?: string;
   industry?: string;
   urgency?: string;
   useCase?: string;
-  sortBy?: 'popularity' | 'price-asc' | 'price-desc' | 'turnaround';
-  page?: number;
+  sort?: string;
+  page?: string;
 }

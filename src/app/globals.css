@@ -1,51 +1,210 @@
 @import "tailwindcss";
 
-:root {
-  --background: #f8f6f0;
-  --foreground: #111311;
-  --card-surface: #ffffff;
-  --card-warm: #eee9df;
-  --primary-olive: #222b22;
-  --primary-olive-hover: #161c16;
-  --banner-olive: #4f5d4b;
-  --accent-lime: #d9e855;
-  --border-subtle: #e6e1d6;
+/* Palette taken from the reference UI: cream canvas, sand tiles, forest CTAs, sage blocks, lime accent.
+   Contrast checked: ink/cream 16.9, muted/cream 5.6, white/sage 5.1, lime/forest 10.4. Lime never sits on sage. */
+@theme {
+  --color-cream: #fbf8f0;
+  --color-sand: #ece3d1;
+  --color-sand-deep: #e1d5bd;
+  --color-line: #ddd2bd;
+  --color-ink: #15180f;
+  --color-muted: #64645a;
+  --color-forest: #243024;
+  --color-forest-deep: #182118;
+  --color-sage: #68725a;
+  --color-lime: #dfe86d;
+
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card-surface: var(--card-surface);
-  --color-card-warm: var(--card-warm);
-  --color-primary-olive: var(--primary-olive);
-  --color-banner-olive: var(--banner-olive);
-  --color-accent-lime: var(--accent-lime);
-  --color-border-subtle: var(--border-subtle);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    background: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-forest);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--color-lime);
+    color: var(--color-ink);
+  }
+  /* Lock page scroll while the cart dialog is open. */
+  html:has(dialog[open]) {
+    overflow: hidden;
+  }
 }
 
-body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  letter-spacing: -0.015em;
+/* Layout + type primitives */
+@utility wrap {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1320px;
+  padding-inline: 1rem;
+  @media (width >= 40rem) { padding-inline: 1.5rem; }
+  @media (width >= 64rem) { padding-inline: 2.5rem; }
 }
 
-/* Custom minimal scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+@utility display {
+  font-weight: 800;
+  font-stretch: 112%;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+  text-wrap: balance;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+
+@utility eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
-::-webkit-scrollbar-thumb {
-  background: #cfc8bd;
-  border-radius: 9999px;
+
+@utility tag {
+  display: inline-block;
+  background: white;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #a9a194;
+
+/* Buttons: square, as in the reference. Press feedback per Emil Kowalski: scale(0.97), 160ms. */
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding-inline: 1.75rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  transition: transform 160ms var(--ease-out), background-color 160ms ease, color 160ms ease;
+  cursor: pointer;
+  &:active { transform: scale(0.97); }
+  &:disabled { opacity: 0.5; pointer-events: none; }
+}
+
+@utility btn-dark {
+  background: var(--color-forest);
+  color: var(--color-cream);
+  &:hover { background: var(--color-forest-deep); }
+}
+
+@utility btn-line {
+  border: 1px solid var(--color-ink);
+  &:hover { background: var(--color-sand); }
+}
+
+@utility btn-lime {
+  background: var(--color-lime);
+  color: var(--color-ink);
+  &:hover { background: white; }
+}
+
+@utility field {
+  width: 100%;
+  min-height: 3rem;
+  border: 1px solid var(--color-line);
+  background: white;
+  padding-inline: 0.875rem;
+  font-size: 0.9375rem;
+  transition: border-color 160ms ease;
+  &:focus { border-color: var(--color-forest); outline: none; }
+}
+
+/* ---------- Motion ---------- */
+
+/* Hero headline: each line rises out of a mask once, on first paint. */
+@keyframes rise {
+  from { transform: translateY(105%); }
+}
+@utility rise-line {
+  display: block;
+  overflow: hidden;
+  & > span {
+    display: block;
+    animation: rise 900ms var(--ease-out) both;
+    animation-delay: calc(var(--i, 0) * 90ms + 100ms);
+  }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+}
+@utility fade-up {
+  animation: fade-up 700ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 70ms + 250ms);
+}
+
+/* Scroll reveal with native scroll-driven animations; browsers without support just show content. */
+@supports (animation-timeline: view()) {
+  .reveal {
+    animation: fade-up linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 40%;
+  }
+}
+
+@keyframes pop {
+  50% { transform: scale(1.25); }
+}
+
+@keyframes fade {
+  from { opacity: 0; }
+}
+
+/* Cart drawer: native <dialog> sliding in from the right. Enter 320ms, exit faster at 200ms. */
+.drawer {
+  margin: 0 0 0 auto;
+  height: 100dvh;
+  max-height: none;
+  width: min(440px, 100%);
+  transform: translateX(100%);
+  transition: transform 200ms var(--ease-out), overlay 200ms allow-discrete, display 200ms allow-discrete;
+  &[open] {
+    transform: none;
+    transition-duration: 320ms;
+    transition-timing-function: var(--ease-drawer);
+    @starting-style { transform: translateX(100%); }
+  }
+  &::backdrop {
+    background: rgb(21 24 15 / 0);
+    transition: background-color 200ms ease, overlay 200ms allow-discrete, display 200ms allow-discrete;
+  }
+  &[open]::backdrop {
+    background: rgb(21 24 15 / 0.45);
+    @starting-style { background: rgb(21 24 15 / 0); }
+  }
+}
+
+/* Header popovers (search bar, mobile menu): short fade + drop, exit as fast as enter. */
+.pop {
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 200ms ease, transform 200ms var(--ease-out), overlay 200ms allow-discrete, display 200ms allow-discrete;
+  &:popover-open {
+    opacity: 1;
+    transform: none;
+    @starting-style { opacity: 0; transform: translateY(-8px); }
+  }
+  &::backdrop { background: rgb(21 24 15 / 0.3); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+  }
+  .reveal { animation: none !important; }
 }
