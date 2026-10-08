@@ -1,182 +1,125 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef } from 'react';
 import Link from 'next/link';
+import Form from 'next/form';
 import { usePathname, useRouter } from 'next/navigation';
-import { ShoppingBag, Search, X, Menu } from 'lucide-react';
-import { MarketCode } from '@/lib/types';
-import { MarketSelector } from './MarketSelector';
-import { useCartStore } from '@/lib/cart-store';
-import { getMarketConfig, formatCurrency } from '@/lib/markets';
+import { Menu, Search, X } from 'lucide-react';
+import { MARKETS, SUPPORTED_MARKETS, formatCurrency } from '@/lib/markets';
+import { CATEGORIES } from '@/lib/services-data';
+import type { MarketCode } from '@/lib/types';
+import { CartButton } from './Cart';
 
-interface HeaderProps {
-  market: MarketCode;
-}
-
-export function Header({ market }: HeaderProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const pathname = usePathname();
+export function Header({ market }: { market: MarketCode }) {
   const router = useRouter();
-  const { openCart, items } = useCartStore();
-  const config = getMarketConfig(market);
+  const pathname = usePathname();
+  const searchRef = useRef<HTMLDivElement>(null);
+  const searchInput = useRef<HTMLInputElement>(null);
+  const config = MARKETS[market];
 
-  const marketItemCount = items
-    .filter((item) => item.market === market)
-    .reduce((sum, item) => sum + item.quantity, 0);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/${market}?search=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchOpen(false);
-    }
-  };
-
-  const navLinks = [
-    { label: 'Create', href: `/${market}?category=create` },
-    { label: 'Prints', href: `/${market}?category=prints` },
-    { label: 'Gifts', href: `/${market}?category=gifts` },
-    { label: 'Studio', href: `/${market}?category=studio` },
-    { label: 'Digital', href: `/${market}?category=digital` },
+  const links = [
+    { label: 'All services', href: `/${market}/services` },
+    ...Object.entries(CATEGORIES).map(([slug, c]) => ({ label: c.label, href: `/${market}/services?category=${slug}` })),
   ];
 
+  // Same page, same filters, different market.
+  const switchMarket = (code: string) => router.push(pathname.replace(/^\/[a-z]{2}(?=\/|$)/, `/${code}`) + window.location.search);
+
+  // Close the mobile menu popover after a link is followed.
+  const closeOnLink = (e: React.MouseEvent<HTMLElement>) => {
+    if ((e.target as Element).closest('a')) e.currentTarget.hidePopover();
+  };
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-[#e6e1d6] bg-[#f8f6f0]/95 backdrop-blur-md shadow-xs transition-all">
-      {/* 1. Top Announcement Bar - Fixed with the Header */}
-      <div className="bg-[#222b22] text-[#f8f6f0] text-center py-2.5 px-4 text-[11px] sm:text-xs font-bold uppercase tracking-widest border-b border-black/10">
-        Complimentary express dispatch on orders over {formatCurrency(config.freeShippingThreshold, market)} across {config.name}.
-      </div>
+    <>
+      <p className="bg-sage px-4 py-2.5 text-center text-xs text-white sm:text-sm">
+        Free delivery across {config.name} on orders over {formatCurrency(config.freeShippingFrom, market)}
+      </p>
 
-      {/* 2. Main Navbar - Big, Bold, Corporate */}
-      <div className="mx-auto flex h-20 sm:h-24 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Left Navigation Links - Bold Uppercase */}
-        <nav className="hidden md:flex items-center gap-8 text-xs sm:text-sm font-black uppercase tracking-wider text-zinc-950">
-          <Link
-            href={`/${market}`}
-            className="hover:text-black transition-colors"
-          >
-            Catalog
-          </Link>
-          {navLinks.slice(0, 3).map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className="hover:text-black transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+      <header className="sticky top-0 z-40 border-b border-line bg-cream/95 backdrop-blur-sm">
+        <div className="wrap grid h-16 grid-cols-[1fr_auto] items-center gap-4 lg:h-20 lg:grid-cols-[1fr_auto_1fr]">
+          <nav aria-label="Main" className="hidden items-center gap-6 text-sm font-medium lg:flex">
+            {links.map((l) => (
+              <Link key={l.href} href={l.href} className="underline-offset-8 decoration-2 hover:underline">
+                {l.label}
+              </Link>
+            ))}
+          </nav>
 
-        {/* Center Brand Wordmark - Big & Bold */}
-        <Link href={`/${market}`} className="flex items-center gap-2 group">
-          <span className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[#111311] group-hover:opacity-90 transition-opacity select-none">
+          <Link href={`/${market}`} className="display text-[28px] lg:justify-self-center lg:text-[34px]" aria-label="Branda home">
             Branda
-          </span>
-        </Link>
+          </Link>
 
-        {/* Right Navigation & Utility Actions */}
-        <div className="flex items-center gap-3 sm:gap-5">
-          <nav className="hidden lg:flex items-center gap-8 text-xs sm:text-sm font-black uppercase tracking-wider text-zinc-950 mr-2">
-            {navLinks.slice(3).map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                className="hover:text-black transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Search Input / Trigger */}
-          {searchOpen ? (
-            <form onSubmit={handleSearchSubmit} className="relative flex items-center">
-              <input
-                type="text"
-                placeholder="Search catalog..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                autoFocus
-                suppressHydrationWarning
-                className="w-40 sm:w-60 rounded-full border border-[#e6e1d6] bg-white px-4 py-2 text-xs font-semibold text-zinc-900 outline-none focus:border-[#222b22] shadow-xs"
-              />
-              <button
-                type="button"
-                onClick={() => setSearchOpen(false)}
-                className="ml-1.5 text-zinc-400 hover:text-zinc-700 cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </form>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              aria-label="Search catalog"
-              className="p-2.5 text-zinc-900 hover:text-black transition-colors cursor-pointer"
+          <div className="flex items-center justify-self-end gap-1.5 sm:gap-2.5">
+            <label htmlFor="market" className="sr-only">Country and currency</label>
+            <select
+              id="market"
+              value={market}
+              onChange={(e) => switchMarket(e.target.value)}
+              className="h-10 cursor-pointer border border-line bg-transparent px-2 text-sm font-medium hover:border-ink"
             >
-              <Search className="h-5 w-5 stroke-[2.5]" />
+              {SUPPORTED_MARKETS.map((code) => (
+                <option key={code} value={code}>
+                  {MARKETS[code].flag} {MARKETS[code].currency}
+                </option>
+              ))}
+            </select>
+            <button type="button" popoverTarget="site-search" aria-label="Search services" className="grid size-10 place-items-center hover:bg-sand">
+              <Search className="size-5" />
             </button>
-          )}
-
-          {/* Region / Currency Selector */}
-          <MarketSelector currentMarket={market} />
-
-          {/* Circular Bag Button - Big, Bold, Direct match to Mockup 0 */}
-          <button
-            type="button"
-            onClick={openCart}
-            aria-label={`Open orders with ${marketItemCount} items`}
-            className="relative flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-[#222b22] text-white shadow-sm hover:bg-[#161c16] transition-colors cursor-pointer"
-          >
-            <ShoppingBag className="h-4.5 w-4.5" />
-            {marketItemCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#d9e855] px-1 text-[11px] font-black text-black shadow-xs">
-                {marketItemCount}
-              </span>
-            )}
-          </button>
-
-          {/* Mobile Menu Trigger */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-zinc-900 hover:text-black md:hidden cursor-pointer"
-            aria-label="Toggle navigation menu"
-          >
-            {mobileMenuOpen ? <X className="h-6 w-6 stroke-[2.5]" /> : <Menu className="h-6 w-6 stroke-[2.5]" />}
-          </button>
+            <CartButton market={market} />
+            <button type="button" popoverTarget="site-menu" aria-label="Open menu" className="grid size-10 place-items-center hover:bg-sand lg:hidden">
+              <Menu className="size-5" />
+            </button>
+          </div>
         </div>
+      </header>
+
+      <div
+        id="site-search"
+        ref={searchRef}
+        popover="auto"
+        onToggle={(e) => e.newState === 'open' && searchInput.current?.focus()}
+        className="pop inset-x-0 top-0 m-0 w-full max-w-none border-b border-line bg-cream"
+      >
+        <Form action={`/${market}/services`} onSubmit={() => searchRef.current?.hidePopover()} className="wrap flex gap-2 py-5">
+          <label htmlFor="site-search-input" className="sr-only">Search services</label>
+          <input
+            ref={searchInput}
+            id="site-search-input"
+            name="search"
+            type="search"
+            required
+            placeholder="Try “mugs”, “signage” or “website”"
+            className="field flex-1"
+          />
+          <button className="btn btn-dark">Search</button>
+        </Form>
       </div>
 
-      {/* Mobile Navigation Dropdown */}
-      {mobileMenuOpen && (
-        <div className="border-t border-[#e6e1d6] bg-[#f8f6f0] px-6 py-6 md:hidden shadow-lg animate-in slide-in-from-top-2 duration-200">
-          <nav className="flex flex-col space-y-4">
-            <Link
-              href={`/${market}`}
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-sm font-black uppercase tracking-wider text-zinc-950 py-1"
-            >
-              Catalog Overview
-            </Link>
-            {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-sm font-black uppercase tracking-wider text-zinc-700 hover:text-black py-1"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+      <nav
+        id="site-menu"
+        popover="auto"
+        aria-label="Mobile"
+        onClick={closeOnLink}
+        className="pop inset-0 m-0 h-dvh max-h-none w-full max-w-none bg-cream p-6"
+      >
+        <div className="flex items-center justify-between">
+          <span className="display text-[28px]">Branda</span>
+          <button type="button" popoverTarget="site-menu" popoverTargetAction="hide" aria-label="Close menu" className="grid size-10 place-items-center hover:bg-sand">
+            <X className="size-6" />
+          </button>
         </div>
-      )}
-    </header>
+        <ul className="mt-10 space-y-1">
+          {links.map((l, i) => (
+            <li key={l.href} className="fade-up" style={{ '--i': i } as React.CSSProperties}>
+              <Link href={l.href} className="display block py-2 text-5xl">
+                {l.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </>
   );
 }
