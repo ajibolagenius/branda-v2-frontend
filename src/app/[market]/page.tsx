@@ -1,200 +1,202 @@
-import { redirect } from 'next/navigation';
-import Link from 'next/link';
-import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { ChevronLeft, ChevronRight, PackageSearch } from 'lucide-react';
-import { isValidMarket, getMarketConfig } from '@/lib/markets';
-import { MarketCode } from '@/lib/types';
-import { SERVICES, filterServices } from '@/lib/services-data';
-import { EcosystemHero } from '@/components/EcosystemHero';
-import { CatalogFilters } from '@/components/CatalogFilters';
+import Link from 'next/link';
+import Image from 'next/image';
+import { ArrowRight, Layers, Package, Wallet } from 'lucide-react';
+import { alternates, formatCurrency, getMarket } from '@/lib/markets';
+import { CATEGORIES, SERVICES, getService, getServices, unitPrice } from '@/lib/services-data';
+import type { Category, MarketCode } from '@/lib/types';
 import { ServiceCard } from '@/components/ServiceCard';
 
 export const instant = false;
 
-interface MarketPageProps {
-  params: Promise<{ market: string }>;
-  searchParams: Promise<{
-    category?: string;
-    search?: string;
-    industry?: string;
-    urgency?: string;
-    useCase?: string;
-    sortBy?: string;
-    page?: string;
-  }>;
-}
-
-export async function generateMetadata({ params }: MarketPageProps): Promise<Metadata> {
-  const { market } = await params;
-  if (!isValidMarket(market)) return {};
-  const config = getMarketConfig(market);
-
+export async function generateMetadata({ params }: PageProps<'/[market]'>): Promise<Metadata> {
+  const m = getMarket((await params).market);
   return {
-    title: `${config.hero.headline} | Branda ${config.name}`,
-    description: `${config.hero.tagline} ${config.hero.subtext}`,
-    alternates: {
-      canonical: `/${config.code}`,
-      languages: {
-        'en-NG': '/ng',
-        'en-US': '/us',
-        'en-GB': '/uk',
-        'en-CA': '/ca',
-      },
-    },
-    openGraph: {
-      title: `Branda Branding Ecosystem — ${config.name}`,
-      description: config.hero.tagline,
-      locale: market === 'ng' ? 'en_NG' : market === 'us' ? 'en_US' : market === 'uk' ? 'en_GB' : 'en_CA',
-      siteName: 'Branda',
-      type: 'website',
-    },
+    title: { absolute: `Branda ${m.name}: ${m.headline}` },
+    description: m.subline,
+    alternates: { canonical: `/${m.code}`, languages: alternates() },
+    openGraph: { title: m.headline, description: m.subline, locale: m.locale.replace('-', '_'), siteName: 'Branda' },
   };
 }
 
-const ITEMS_PER_PAGE = 6;
+const h2 = 'display text-[clamp(2.25rem,5.5vw,4.75rem)]';
 
-export default async function MarketListingPage({ params, searchParams }: MarketPageProps) {
-  const { market } = await params;
-  const query = await searchParams;
+const REASONS = [
+  { icon: Layers, title: 'One order, every touchpoint', text: 'Logo, print, gifts, office and web in one cart, on one invoice.' },
+  { icon: Wallet, title: 'No middleman charges', text: 'We run production ourselves, so you pay for the work, not the handoffs.' },
+  { icon: Package, title: 'Samples before you commit', text: 'Order a sample first. Spread bigger jobs over a deposit and balance.' },
+];
 
-  if (!isValidMarket(market)) {
-    redirect('/ng');
-  }
+const CLIENTS = ['GTBank', 'Dangote', 'Truecaller', 'Autochek', 'Reliance Infosystems', 'Swipe'];
 
-  const marketCode = market as MarketCode;
-  const config = getMarketConfig(marketCode);
-
-  // Filter services on the server
-  let filteredServices = filterServices(SERVICES, {
-    category: query.category,
-    search: query.search,
-    industry: query.industry,
-    urgency: query.urgency,
-    useCase: query.useCase,
-    sortBy: query.sortBy,
-  });
-
-  // Localized price sorting
-  if (query.sortBy === 'price-asc') {
-    filteredServices.sort((a, b) => (a.basePrices[marketCode] || 0) - (b.basePrices[marketCode] || 0));
-  } else if (query.sortBy === 'price-desc') {
-    filteredServices.sort((a, b) => (b.basePrices[marketCode] || 0) - (a.basePrices[marketCode] || 0));
-  }
-
-  const totalResults = filteredServices.length;
-  const currentPage = Math.max(1, parseInt(query.page || '1', 10));
-  const totalPages = Math.ceil(totalResults / ITEMS_PER_PAGE);
-
-  const paginatedServices = filteredServices.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
-
-  // Helper to construct pagination URLs preserving current searchParams
-  const getPageUrl = (pageNumber: number) => {
-    const p = new URLSearchParams();
-    if (query.category) p.set('category', query.category);
-    if (query.search) p.set('search', query.search);
-    if (query.industry) p.set('industry', query.industry);
-    if (query.urgency) p.set('urgency', query.urgency);
-    if (query.useCase) p.set('useCase', query.useCase);
-    if (query.sortBy) p.set('sortBy', query.sortBy);
-    if (pageNumber > 1) p.set('page', pageNumber.toString());
-
-    const qs = p.toString();
-    return qs ? `/${marketCode}?${qs}` : `/${marketCode}`;
-  };
+export default async function HomePage({ params }: PageProps<'/[market]'>) {
+  const config = getMarket((await params).market);
+  const market: MarketCode = config.code;
+  const [left, right, ...popular] = getServices(config.featured);
+  const spotlight = getService(config.spotlight)!;
+  const lines = config.headline.split(/(?<=[.,])\s+/);
 
   return (
-    <div className="space-y-16 sm:space-y-24">
-      {/* Localized Ecosystem Hero */}
-      <EcosystemHero config={config} market={marketCode} />
-
-      {/* Main Catalog Section (Directly matching 'Salad Works Exclusive' in Mockup 0) */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
-        <div className="text-center max-w-2xl mx-auto mb-10">
-          <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[#111311]">
-            Branda Exclusive Catalog
-          </h2>
-          <p className="mt-2 text-xs sm:text-sm text-zinc-600">
-            Configure custom corporate branding assets with factory-direct fulfillment in {config.name}.
-          </p>
+    <>
+      {/* Hero */}
+      <section className="wrap pt-12 pb-20 sm:pt-20 sm:pb-28">
+        <h1 className="display text-center text-[clamp(3.1rem,8.6vw,8rem)]">
+          {lines.map((line, i) => (
+            <span key={line} className="rise-line pb-[0.06em]" style={{ '--i': i } as React.CSSProperties}>
+              <span>{line}</span>
+            </span>
+          ))}
+        </h1>
+        <p className="fade-up mx-auto mt-6 max-w-xl text-center text-lg text-muted text-balance">{config.subline}</p>
+        <div className="fade-up mt-8 flex justify-center" style={{ '--i': 1 } as React.CSSProperties}>
+          <Link href={`/${market}/services`} className="btn btn-dark">
+            Browse all services <ArrowRight className="size-4" />
+          </Link>
         </div>
 
-        {/* Filter Controls (Client component syncing to URL) */}
-        <Suspense fallback={<div className="h-28 w-full animate-pulse rounded-3xl bg-[#eee9df]" />}>
-          <CatalogFilters market={marketCode} totalResults={totalResults} />
-        </Suspense>
+        <div className="mt-14 grid items-start gap-6 sm:mt-20 md:grid-cols-12 md:gap-10">
+          {[left, right].map((s, i) => (
+            <Link
+              key={s.slug}
+              href={`/${market}/services/${s.slug}`}
+              className={`group fade-up block ${i === 0 ? 'md:col-span-5 md:mt-24' : 'md:col-span-7'}`}
+              style={{ '--i': i + 2 } as React.CSSProperties}
+            >
+              <div className={`relative overflow-hidden bg-sand ${i === 0 ? 'aspect-[4/5]' : 'aspect-[5/6]'}`}>
+                <Image
+                  src={s.images[0]}
+                  alt={s.name}
+                  fill
+                  preload
+                  sizes={i === 0 ? '(min-width: 768px) 40vw, 100vw' : '(min-width: 768px) 58vw, 100vw'}
+                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                />
+              </div>
+              <div className="mt-3 flex justify-between gap-4 text-sm font-semibold tracking-wide uppercase">
+                <span>{s.name}</span>
+                <span className="tabular-nums">{formatCurrency(unitPrice(s, market), market)}</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
 
-        {/* Services Grid or Empty State */}
-        {paginatedServices.length > 0 ? (
-          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {paginatedServices.map((service) => (
-              <ServiceCard key={service.id} service={service} market={marketCode} />
+      {/* Popular in this market */}
+      <section className="border-t border-line bg-white/60 py-20 sm:py-28">
+        <div className="wrap">
+          <h2 className={`${h2} reveal text-center`}>Popular in {config.name}</h2>
+          <nav aria-label="Categories" className="reveal mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm font-medium">
+            {Object.entries(CATEGORIES).map(([slug, c]) => (
+              <Link key={slug} href={`/${market}/services?category=${slug}`} className="text-muted underline-offset-8 decoration-2 hover:text-ink hover:underline">
+                {c.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="mt-12 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-6">
+            {popular.map((s) => (
+              <div key={s.slug} className="reveal">
+                <ServiceCard service={s} market={market} />
+              </div>
             ))}
           </div>
-        ) : (
-          <div className="mt-12 flex flex-col items-center justify-center rounded-3xl border border-dashed border-[#e6e1d6] bg-white py-16 px-4 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eee9df] text-zinc-500">
-              <PackageSearch className="h-7 w-7" />
-            </div>
-            <h3 className="mt-4 text-base font-bold text-zinc-950">
-              No services match your active filters
-            </h3>
-            <p className="mt-1 text-xs text-zinc-500 max-w-sm">
-              Try broadening your search term or selecting &quot;All Services&quot;.
-            </p>
-            <Link
-              href={`/${marketCode}`}
-              className="mt-6 rounded-full bg-[#222b22] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#161c16] transition-colors"
-            >
-              Reset Filters
+          <div className="mt-14 flex justify-center">
+            <Link href={`/${market}/services`} className="btn btn-dark min-w-56">See all</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Five categories */}
+      <section className="py-20 sm:py-28">
+        <div className="wrap">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <h2 className={`${h2} reveal`}>Five studios.<br />One cart.</h2>
+            <p className="reveal max-w-sm text-muted">Mix a logo, office signage and 200 mugs in the same order. We coordinate the rest.</p>
+          </div>
+        </div>
+        <ul className="wrap mt-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 lg:grid lg:grid-cols-5 lg:overflow-visible">
+          {(Object.keys(CATEGORIES) as Category[]).map((cat) => {
+            const cover = SERVICES.find((s) => s.category === cat && s.popular) ?? SERVICES.find((s) => s.category === cat)!;
+            return (
+              <li key={cat} className="reveal w-[72%] shrink-0 snap-start sm:w-[40%] lg:w-auto">
+                <Link href={`/${market}/services?category=${cat}`} className="group block bg-sand p-3">
+                  <span className="tag">{CATEGORIES[cat].label}</span>
+                  <div className="relative mt-3 aspect-square overflow-hidden">
+                    <Image src={cover.images[0]} alt="" fill sizes="(min-width: 1024px) 20vw, 70vw" className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]" />
+                  </div>
+                  <p className="mt-3 text-sm">{CATEGORIES[cat].blurb}</p>
+                  <span className="mt-4 flex h-10 items-center justify-center border border-ink text-sm font-semibold transition-colors group-hover:bg-forest group-hover:text-cream">
+                    Shop {CATEGORIES[cat].label}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      {/* Spotlight: changes per market */}
+      <section className="wrap pb-20 sm:pb-28">
+        <div className="reveal grid overflow-hidden bg-forest text-cream lg:grid-cols-2">
+          <div className="flex flex-col justify-center p-8 sm:p-14">
+            <p className="eyebrow text-lime">Most ordered in {config.name}</p>
+            <h2 className="display mt-4 text-[clamp(2.5rem,5vw,4.5rem)]">{spotlight.name}</h2>
+            <p className="mt-4 max-w-md text-cream/80">{spotlight.summary}</p>
+            <dl className="mt-8 grid max-w-md grid-cols-3 gap-4 border-t border-cream/20 pt-6">
+              {[
+                [`${spotlight.turnaroundDays} days`, 'Turnaround'],
+                [formatCurrency(unitPrice(spotlight, market), market), 'Starting at'],
+                [`${spotlight.includes.length} items`, 'Included'],
+              ].map(([value, label]) => (
+                <div key={label} className="flex flex-col-reverse">
+                  <dt className="eyebrow mt-1 text-cream/70">{label}</dt>
+                  <dd className="text-lg font-bold text-lime tabular-nums">{value}</dd>
+                </div>
+              ))}
+            </dl>
+            <Link href={`/${market}/services/${spotlight.slug}`} className="btn btn-lime mt-10 self-start">
+              Order now
             </Link>
           </div>
-        )}
-
-        {/* Pagination Bar */}
-        {totalPages > 1 && (
-          <div className="mt-12 flex items-center justify-between border-t border-[#e6e1d6] pt-6">
-            <div className="text-xs text-zinc-500 font-medium">
-              Showing page <strong>{currentPage}</strong> of <strong>{totalPages}</strong> ({totalResults} deliverables total)
-            </div>
-
-            <div className="flex items-center gap-2">
-              {currentPage > 1 ? (
-                <Link
-                  href={getPageUrl(currentPage - 1)}
-                  className="flex items-center gap-1 rounded-xl border border-[#e6e1d6] bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-[#eee9df] transition-colors"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                  <span>Previous</span>
-                </Link>
-              ) : (
-                <span className="flex items-center gap-1 rounded-xl border border-zinc-200 bg-zinc-100/60 px-3.5 py-1.5 text-xs font-semibold text-zinc-400 cursor-not-allowed">
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                  <span>Previous</span>
-                </span>
-              )}
-
-              {currentPage < totalPages ? (
-                <Link
-                  href={getPageUrl(currentPage + 1)}
-                  className="flex items-center gap-1 rounded-xl border border-[#e6e1d6] bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-[#eee9df] transition-colors"
-                >
-                  <span>Next</span>
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </Link>
-              ) : (
-                <span className="flex items-center gap-1 rounded-xl border border-zinc-200 bg-zinc-100/60 px-3.5 py-1.5 text-xs font-semibold text-zinc-400 cursor-not-allowed">
-                  <span>Next</span>
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </span>
-              )}
-            </div>
+          <div className="relative min-h-80 lg:min-h-[560px]">
+            <Image src={spotlight.images[0]} alt={spotlight.name} fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" />
           </div>
-        )}
+        </div>
       </section>
-    </div>
+
+      {/* Why Branda */}
+      <section className="grid bg-sage text-white lg:grid-cols-2">
+        <div className="relative min-h-80 lg:min-h-[640px]">
+          <Image src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1400&q=80" alt="A team reviewing printed brand work" fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" />
+        </div>
+        <div className="flex flex-col justify-center px-6 py-16 sm:px-14 lg:px-20">
+          <h2 className="display reveal text-[clamp(2.5rem,5vw,4.5rem)]">Branding without the runaround.</h2>
+          <ul className="mt-10 space-y-7">
+            {REASONS.map(({ icon: Icon, title, text }) => (
+              <li key={title} className="reveal flex items-start gap-5">
+                <span className="grid size-14 shrink-0 place-items-center rounded-full bg-cream text-ink">
+                  <Icon className="size-6" strokeWidth={1.5} />
+                </span>
+                <div>
+                  <h3 className="text-xl font-semibold">{title}</h3>
+                  <p className="mt-1 text-white/85">{text}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* Clients */}
+      <section className="wrap py-20 sm:py-28">
+        <p className="eyebrow reveal text-muted">Chosen by 500+ companies, including</p>
+        <ul className="mt-6 flex flex-wrap gap-x-8 gap-y-2">
+          {CLIENTS.map((c) => (
+            <li key={c} className="display reveal text-[clamp(2rem,5vw,4rem)] text-ink/25 transition-colors duration-300 hover:text-ink">
+              {c}
+            </li>
+          ))}
+        </ul>
+      </section>
+    </>
   );
 }
