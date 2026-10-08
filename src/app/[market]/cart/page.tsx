@@ -9,7 +9,7 @@ import { QtyStepper, SummaryLines } from '@/components/Cart';
 
 export default function CartPage({ params }: PageProps<'/[market]/cart'>) {
   const { code: market } = getMarket(use(params).market);
-  const { items, hydrated, setQuantity, removeItem } = useCartStore();
+  const { items, hydrated, setQuantity } = useCartStore();
   const summary = orderSummary(items, market);
 
   if (!hydrated) return <div className="wrap min-h-[60vh] py-16" aria-busy />;
@@ -48,7 +48,7 @@ export default function CartPage({ params }: PageProps<'/[market]/cart'>) {
                 </div>
                 <div className="flex items-center justify-between">
                   <QtyStepper value={item.quantity} onChange={(n) => setQuantity(item.id, n)} label={item.name} />
-                  <button type="button" onClick={() => removeItem(item.id)} className="text-sm text-muted underline-offset-4 hover:text-ink hover:underline">
+                  <button type="button" onClick={() => setQuantity(item.id, 0)} className="text-sm text-muted underline-offset-4 hover:text-ink hover:underline">
                     Remove
                   </button>
                 </div>

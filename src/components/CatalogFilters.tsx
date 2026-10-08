@@ -3,8 +3,7 @@
 import { useState, useTransition } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
-import { INDUSTRIES, SORTS, URGENCY, USE_CASES } from '@/lib/services-data';
-import type { CatalogQuery } from '@/lib/types';
+import { INDUSTRIES, SORTS, URGENCY, USE_CASES, type CatalogQuery } from '@/lib/services-data';
 
 const SELECTS: { key: keyof CatalogQuery; label: string; all: string; options: Record<string, string> }[] = [
   { key: 'industry', label: 'Industry', all: 'Any industry', options: INDUSTRIES },
@@ -29,7 +28,7 @@ export function CatalogFilters({ query }: { query: CatalogQuery }) {
   const apply = (next: CatalogQuery) => {
     setValues(next);
     const params = new URLSearchParams();
-    for (const [k, v] of Object.entries(next)) if (v && k !== 'page' && !(k === 'sort' && v === 'popular')) params.set(k, v);
+    for (const [k, v] of Object.entries(next)) if (v && k !== 'page') params.set(k, v);
     startTransition(() => router.push(params.size ? `${pathname}?${params}` : pathname, { scroll: false }));
   };
 
@@ -67,7 +66,7 @@ export function CatalogFilters({ query }: { query: CatalogQuery }) {
               onChange={(e) => apply({ ...values, [key]: e.target.value })}
               className="field cursor-pointer pr-8"
             >
-              {key !== 'sort' && <option value="">{all}</option>}
+              <option value="">{all}</option>
               {Object.entries(options).map(([value, text]) => (
                 <option key={value} value={value}>{text}</option>
               ))}

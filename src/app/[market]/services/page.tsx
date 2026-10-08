@@ -2,20 +2,16 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { alternates, getMarket } from '@/lib/markets';
-import { CATEGORIES, queryCatalog } from '@/lib/services-data';
-import type { CatalogQuery, Category } from '@/lib/types';
+import { CATALOG_KEYS, CATEGORIES, queryCatalog, type CatalogQuery } from '@/lib/services-data';
+import type { Category } from '@/lib/types';
 import { ServiceCard } from '@/components/ServiceCard';
 import { CatalogFilters } from '@/components/CatalogFilters';
 
-export const instant = false;
-
 type Props = PageProps<'/[market]/services'>;
-
-const KEYS = ['category', 'search', 'industry', 'urgency', 'useCase', 'sort', 'page'] as const;
 
 async function readQuery(searchParams: Props['searchParams']): Promise<CatalogQuery> {
   const sp = await searchParams;
-  return Object.fromEntries(KEYS.map((k) => [k, [sp[k]].flat()[0] || undefined]).filter(([, v]) => v));
+  return Object.fromEntries(CATALOG_KEYS.map((k) => [k, [sp[k]].flat()[0] || undefined]).filter(([, v]) => v));
 }
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {

@@ -93,7 +93,7 @@ export function CartButton({ market }: { market: MarketCode }) {
 
 export function CartDrawer({ market }: { market: MarketCode }) {
   const ref = useRef<HTMLDialogElement>(null);
-  const { items, isOpen, closeCart, setQuantity, removeItem } = useCartStore();
+  const { items, isOpen, closeCart, setQuantity } = useCartStore();
   const summary = orderSummary(items, market);
 
   useEffect(() => {
@@ -150,7 +150,7 @@ export function CartDrawer({ market }: { market: MarketCode }) {
                     <p className="text-xs text-muted">{Object.values(item.options).join(' · ')}</p>
                     <div className="flex items-center justify-between">
                       <QtyStepper value={item.quantity} onChange={(n) => setQuantity(item.id, n)} label={item.name} />
-                      <button type="button" onClick={() => removeItem(item.id)} className="text-xs text-muted underline-offset-4 hover:text-ink hover:underline">
+                      <button type="button" onClick={() => setQuantity(item.id, 0)} className="text-xs text-muted underline-offset-4 hover:text-ink hover:underline">
                         Remove
                       </button>
                     </div>

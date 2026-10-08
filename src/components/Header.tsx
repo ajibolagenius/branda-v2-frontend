@@ -13,7 +13,6 @@ import { CartButton } from './Cart';
 export function Header({ market }: { market: MarketCode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchRef = useRef<HTMLDivElement>(null);
   const searchInput = useRef<HTMLInputElement>(null);
   const config = MARKETS[market];
 
@@ -77,12 +76,11 @@ export function Header({ market }: { market: MarketCode }) {
 
       <div
         id="site-search"
-        ref={searchRef}
         popover="auto"
         onToggle={(e) => e.newState === 'open' && searchInput.current?.focus()}
         className="pop inset-x-0 top-0 m-0 w-full max-w-none border-b border-line bg-cream"
       >
-        <Form action={`/${market}/services`} onSubmit={() => searchRef.current?.hidePopover()} className="wrap flex gap-2 py-5">
+        <Form action={`/${market}/services`} onSubmit={(e) => e.currentTarget.closest<HTMLElement>('[popover]')?.hidePopover()} className="wrap flex gap-2 py-5">
           <label htmlFor="site-search-input" className="sr-only">Search services</label>
           <input
             ref={searchInput}

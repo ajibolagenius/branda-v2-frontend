@@ -7,8 +7,6 @@ import { CATEGORIES, SERVICES, getService, getServices, unitPrice } from '@/lib/
 import type { Category, MarketCode } from '@/lib/types';
 import { ServiceCard } from '@/components/ServiceCard';
 
-export const instant = false;
-
 export async function generateMetadata({ params }: PageProps<'/[market]'>): Promise<Metadata> {
   const m = getMarket((await params).market);
   return {

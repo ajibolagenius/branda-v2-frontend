@@ -7,8 +7,6 @@ import { ServiceGallery } from '@/components/ServiceGallery';
 import { ServiceConfigurator } from '@/components/ServiceConfigurator';
 import { ServiceCard } from '@/components/ServiceCard';
 
-export const instant = false;
-
 type Props = PageProps<'/[market]/services/[slug]'>;
 
 export function generateStaticParams() {

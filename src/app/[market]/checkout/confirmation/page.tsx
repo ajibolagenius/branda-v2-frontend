@@ -2,8 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getMarket } from '@/lib/markets';
 
-export const instant = false;
-
 export const metadata: Metadata = { title: 'Order received', robots: { index: false } };
 
 const STEPS = [
